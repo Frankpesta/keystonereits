@@ -53,5 +53,4 @@ export const FOOTER_LEGAL_LINKS: NavLink[] = [
 
 export const COMPANY_NAME = "Keystone REIT";
 export const COMPANY_REGISTRATION_NO = "11793537";
-export const COMPANY_WEBSITE = "www.keystonereits.com";
 export const COMPANY_TAGLINE = "Real Estate. Made More Accessible.";

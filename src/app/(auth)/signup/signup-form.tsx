@@ -190,15 +190,15 @@ export function SignupForm() {
             control={form.control}
             name="termsAccepted"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start gap-2 space-y-0">
+              <FormItem className="flex flex-row items-center gap-2 space-y-0">
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <div className="leading-snug">
-                  <FormLabel className="font-normal">
+                <div>
+                  <FormLabel className="font-normal whitespace-nowrap">
                     I agree to the{" "}
                     <Link href="/terms" className="text-primary hover:underline">
-                      Terms and Conditions
+                      Terms
                     </Link>{" "}
                     and{" "}
                     <Link href="/privacy" className="text-primary hover:underline">

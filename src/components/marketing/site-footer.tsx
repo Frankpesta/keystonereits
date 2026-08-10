@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
-import { COMPANY_NAME, COMPANY_REGISTRATION_NO, COMPANY_WEBSITE, FOOTER_LEGAL_LINKS, FOOTER_QUICK_LINKS } from "./nav-data";
+import { COMPANY_NAME, COMPANY_REGISTRATION_NO, FOOTER_LEGAL_LINKS, FOOTER_QUICK_LINKS } from "./nav-data";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -19,7 +19,7 @@ export function SiteFooter() {
               estate through serviced apartments and short-term rental properties.
             </p>
             <p className="mt-4 text-sm text-muted-foreground">
-              Registration No.: {COMPANY_REGISTRATION_NO} · Website: {COMPANY_WEBSITE}
+              Registration No.: {COMPANY_REGISTRATION_NO}
             </p>
           </div>
 

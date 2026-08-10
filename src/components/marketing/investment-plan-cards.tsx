@@ -27,6 +27,8 @@ export function InvestmentPlanCards() {
         duration: 0.6,
         stagger: 0.1,
         ease: "power2.out",
+        force3D: false,
+        clearProps: "transform",
       });
     },
     [plans]
