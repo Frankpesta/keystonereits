@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { MapPinIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { unsplashUrl } from "@/lib/marketing-images";
 
 export type PropertyCardData = {
   location: string;
@@ -11,7 +10,7 @@ export type PropertyCardData = {
   description: string;
   highlights: string[];
   status: "Active" | "Under Management" | "Coming Soon";
-  image: { base: string; alt: string };
+  image: { src: string; alt: string };
 };
 
 const STATUS_TONE: Record<PropertyCardData["status"], string> = {
@@ -25,7 +24,7 @@ export function PropertyCard({ property }: { property: PropertyCardData }) {
     <div className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="relative aspect-4/3 overflow-hidden">
         <Image
-          src={unsplashUrl(property.image.base, { w: 800, h: 600 })}
+          src={property.image.src}
           alt={property.image.alt}
           fill
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

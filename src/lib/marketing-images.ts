@@ -41,16 +41,6 @@ export const MARKETING_IMAGES = {
     alt: "Bright modern kitchen with marble island",
     credit: "Zac Gudakov",
   },
-  featuredPropertyLiving: {
-    base: "https://images.unsplash.com/photo-1741764014072-68953e93cd48",
-    alt: "Modern open-concept living room",
-    credit: "Melrose By The Lake",
-  },
-  featuredPropertyBalcony: {
-    base: "https://images.unsplash.com/photo-1560448205-d82bf18b9bcf",
-    alt: "Furnished balcony with wicker armchairs",
-    credit: "Francesca Tosolini",
-  },
   servicedApartmentHero: {
     base: "https://images.unsplash.com/photo-1560185007-5f0bb1866cab",
     alt: "Contemporary living room in warm neutral tones",
@@ -73,55 +63,45 @@ export const MARKETING_IMAGES = {
   },
 } as const;
 
-export const PORTFOLIO_PROPERTY_IMAGES: Record<string, { base: string; alt: string; credit: string }> = {
+export const PORTFOLIO_PROPERTY_IMAGES: Record<string, { src: string; alt: string }> = {
   "Miami, Florida, USA": {
-    base: "https://images.unsplash.com/photo-1506079478915-3f458c5077a7",
-    alt: "Modern white and orange concrete apartment building, low-angle view",
-    credit: "Jason Briscoe",
+    src: "/properties/first.jpeg",
+    alt: "Modern apartment building exterior with lit balconies at dusk, palm trees lining the street",
   },
   "Dallas, Texas, USA": {
-    base: "https://images.unsplash.com/photo-1720098848662-fc6b28c7e694",
-    alt: "Tall modern residential tower with a window grid facade",
-    credit: "Paul Rivera",
+    src: "/properties/two.jpeg",
+    alt: "Open-concept living room and kitchen with a city skyline view at dusk",
   },
   "London, United Kingdom": {
-    base: "https://images.unsplash.com/photo-1676680071181-0a0b45968d23",
-    alt: "Tall brick apartment building with balconies",
-    credit: "Seb Doe",
+    src: "/properties/three.jpeg",
+    alt: "Living room with a sectional sofa overlooking a waterfront city skyline",
   },
   "Manchester, United Kingdom": {
-    base: "https://images.unsplash.com/photo-1747994569200-65db9c8ec753",
-    alt: "Apartment building with sunlight hitting the balconies",
-    credit: "Henry Williams",
+    src: "/properties/four.jpeg",
+    alt: "Living room with a view of the Manchester city skyline",
   },
   "Toronto, Ontario, Canada": {
-    base: "https://images.unsplash.com/photo-1707012571400-95390edd45e3",
-    alt: "Contemporary residential towers side by side",
-    credit: "tonny huang",
+    src: "/properties/five.jpeg",
+    alt: "Living room with a view of the CN Tower and Toronto skyline",
   },
   "Dubai, United Arab Emirates": {
-    base: "https://images.unsplash.com/photo-1544092683-c0c9ebb368e5",
-    alt: "Burj Khalifa amid the Dubai skyline",
-    credit: "K T",
+    src: "/properties/six.jpeg",
+    alt: "Living room with a view of the Burj Khalifa and Dubai skyline",
   },
   "Abu Dhabi, United Arab Emirates": {
-    base: "https://images.unsplash.com/photo-1668060742975-9a462159b0bd",
-    alt: "Abu Dhabi waterfront skyline reflected on water",
-    credit: "Karthik B K",
+    src: "/properties/seven.jpeg",
+    alt: "Living room with a view of the Abu Dhabi waterfront skyline",
   },
   "Paris, France": {
-    base: "https://images.unsplash.com/photo-1751838024459-5e79145905ef",
-    alt: "Elegant Parisian building against a bright blue sky",
-    credit: "tonny huang",
+    src: "/properties/eight.jpeg",
+    alt: "Parisian apartment living room with a view of the Eiffel Tower",
   },
   "Lisbon, Portugal": {
-    base: "https://images.unsplash.com/photo-1754765297352-c63d9713895d",
-    alt: "Modern white buildings under a bright blue sky",
-    credit: "Ivan Rohovchenko",
+    src: "/properties/nine.jpeg",
+    alt: "Living room with French doors overlooking Lisbon's terracotta rooftops",
   },
   "Cape Town, South Africa": {
-    base: "https://images.unsplash.com/photo-1542877332-12caa90d23e2",
-    alt: "High-rise residential buildings overlooking the ocean",
-    credit: "Tim Johnson",
+    src: "/properties/ten.jpeg",
+    alt: "Living room with a view of Table Mountain and Cape Town",
   },
 };

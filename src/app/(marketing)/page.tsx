@@ -195,6 +195,31 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Section 1.5 — Explainer Video */}
+      <Section muted className="border-y">
+        <div className="mx-auto max-w-2xl text-center">
+          <SectionKicker>See It In Action</SectionKicker>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground sm:text-4xl">
+            What is Keystone REIT?
+          </h2>
+          <p className="mt-5 text-muted-foreground">
+            Watch a short overview of how Keystone REIT works and what makes our model different.
+          </p>
+        </div>
+        <div className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="relative aspect-video">
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/DXWytl2UgHA"
+              title="What is Keystone REIT?"
+              className="absolute inset-0 h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </Section>
+
       {/* Section 2 — The Opportunity */}
       <Section>
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">

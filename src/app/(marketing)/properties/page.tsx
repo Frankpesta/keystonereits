@@ -9,7 +9,6 @@ import { InsuranceNotice } from "@/components/marketing/insurance-notice";
 import { PageFaq } from "@/components/marketing/page-faq";
 import { ClosingCta } from "@/components/marketing/closing-cta";
 import { Button } from "@/components/ui/button";
-import { unsplashUrl, MARKETING_IMAGES } from "@/lib/marketing-images";
 
 export const metadata: Metadata = {
   title: "Our Properties",
@@ -102,8 +101,8 @@ export default function PropertiesPage() {
           <div className="overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             <div className="relative aspect-4/3">
               <Image
-                src={unsplashUrl(MARKETING_IMAGES.featuredPropertyLiving.base, { w: 900, h: 675 })}
-                alt={MARKETING_IMAGES.featuredPropertyLiving.alt}
+                src="/properties/first.jpeg"
+                alt="Modern apartment building exterior with lit balconies at dusk"
                 fill
                 sizes="(min-width: 640px) 50vw, 100vw"
                 className="object-cover"
@@ -126,8 +125,8 @@ export default function PropertiesPage() {
           <div className="overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
             <div className="relative aspect-4/3">
               <Image
-                src={unsplashUrl(MARKETING_IMAGES.featuredPropertyBalcony.base, { w: 900, h: 675 })}
-                alt={MARKETING_IMAGES.featuredPropertyBalcony.alt}
+                src="/properties/two.jpeg"
+                alt="Open-concept living room and kitchen with a city skyline view at dusk"
                 fill
                 sizes="(min-width: 640px) 50vw, 100vw"
                 className="object-cover"
