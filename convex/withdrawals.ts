@@ -3,7 +3,11 @@ import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCurrentUser } from "./lib/auth";
 import { writeTransaction } from "./lib/ledger";
+import { notifyAdminsByRole } from "./lib/notify";
 import { pendingWithdrawalTotals } from "./lib/withdrawals";
+import type { Doc } from "./_generated/dataModel";
+
+const WITHDRAWAL_NOTIFY_ROLES: Doc<"admins">["role"][] = ["super", "finance"];
 
 export const request = mutation({
   args: {
@@ -64,6 +68,12 @@ export const request = mutation({
       body: `Your withdrawal request for $${args.amountUsd.toLocaleString()} has been received and is pending review.`,
       read: false,
       createdAt: Date.now(),
+    });
+    await notifyAdminsByRole(ctx, {
+      roles: WITHDRAWAL_NOTIFY_ROLES,
+      type: "admin_withdrawal_requested",
+      title: "New Withdrawal Request",
+      body: `${user.firstName} ${user.lastName} requested a $${args.amountUsd.toLocaleString()} withdrawal.`,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendWithdrawalStatusEmail, {
       to: user.email,

@@ -76,7 +76,7 @@ function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
             <DialogHeader>
               <DialogTitle>Invest in {plan.name}</DialogTitle>
               <DialogDescription>
-                {plan.dailyReturnPercent.toFixed(2)}% daily return over {plan.durationDays} days.
+                {plan.weeklyReturnPercent.toFixed(2)}% weekly return over {plan.durationDays} days.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleConfirm} className="flex flex-col gap-4">
@@ -105,8 +105,8 @@ function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                   <dd className="font-medium">{plan.durationDays} days</dd>
                 </div>
                 <div>
-                  <dt className="text-muted-foreground">Daily return</dt>
-                  <dd className="font-medium">{plan.dailyReturnPercent.toFixed(2)}%</dd>
+                  <dt className="text-muted-foreground">Weekly return</dt>
+                  <dd className="font-medium">{plan.weeklyReturnPercent.toFixed(2)}%</dd>
                 </div>
               </dl>
               <DialogFooter>
@@ -133,7 +133,7 @@ export default function InvestPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-2xl font-semibold">Investment Plans</h1>
-        <p className="text-muted-foreground">Choose a plan and start earning daily returns.</p>
+        <p className="text-muted-foreground">Choose a plan and start earning weekly returns.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(plans ?? []).map((plan) => (
@@ -154,8 +154,8 @@ export default function InvestPage() {
                 <span className="font-medium">{plan.durationDays} days</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Daily return</span>
-                <span className="font-medium">{plan.dailyReturnPercent.toFixed(2)}%</span>
+                <span className="text-muted-foreground">Weekly return</span>
+                <span className="font-medium">{plan.weeklyReturnPercent.toFixed(2)}%</span>
               </div>
             </CardContent>
             <CardFooter>

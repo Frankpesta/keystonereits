@@ -5,12 +5,12 @@ import { internal } from "./_generated/api";
 import schema from "./schema";
 import { convexTestModules } from "./test.setup";
 import { createVerifiedUser, createAdmin } from "./lib/testHelpers";
-import { DAY_MS, dateKey } from "./lib/time";
+import { DAY_MS, WEEK_MS, dateKey } from "./lib/time";
 import type { Id } from "./_generated/dataModel";
 
 async function seedPlan(
   t: ReturnType<typeof convexTest>,
-  overrides: Partial<{ dailyReturnPercent: number; status: "active" | "paused" | "draft" | "closed" | "archived" }> = {}
+  overrides: Partial<{ weeklyReturnPercent: number; status: "active" | "paused" | "draft" | "closed" | "archived" }> = {}
 ) {
   const { admin } = await createAdmin(t);
   return await t.run((ctx) =>
@@ -20,8 +20,8 @@ async function seedPlan(
       minAmount: 200,
       maxAmount: 10_000,
       durationDays: 365,
-      dailyReturnPercent: overrides.dailyReturnPercent ?? 1,
-      accrualFrequency: "daily",
+      weeklyReturnPercent: overrides.weeklyReturnPercent ?? 1,
+      accrualFrequency: "weekly",
       status: overrides.status ?? "active",
       createdBy: admin._id,
       createdAt: Date.now(),
@@ -58,17 +58,17 @@ async function seedInvestment(
   );
 }
 
-describe("investments.accrueDailyProfit", () => {
-  it("accrues 1% of the investment amount for an active investment last accrued yesterday", async () => {
+describe("investments.accrueWeeklyProfit", () => {
+  it("accrues 1% of the investment amount for an active investment last accrued a week ago", async () => {
     const t = convexTest(schema, convexTestModules);
     const { user } = await createVerifiedUser(t, { profit: 0 });
-    const planId = await seedPlan(t, { dailyReturnPercent: 1 });
+    const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
     const investmentId = await seedInvestment(t, user._id, planId, {
       amount: 1000,
-      lastAccrualAt: Date.now() - DAY_MS,
+      lastAccrualAt: Date.now() - WEEK_MS,
     });
 
-    const result = await t.mutation(internal.investments.accrueDailyProfit, {});
+    const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
     expect(result).toEqual({ accruedCount: 1, scanned: 1 });
 
     const investment = await t.run((ctx) => ctx.db.get(investmentId));
@@ -87,14 +87,14 @@ describe("investments.accrueDailyProfit", () => {
     expect(transactions).toMatchObject([{ type: "profit_accrual", amount: 10 }]);
   });
 
-  it("does not double-accrue when run twice the same day (idempotent)", async () => {
+  it("does not double-accrue when run twice within the same week (idempotent)", async () => {
     const t = convexTest(schema, convexTestModules);
     const { user } = await createVerifiedUser(t);
-    const planId = await seedPlan(t, { dailyReturnPercent: 1 });
-    await seedInvestment(t, user._id, planId, { amount: 1000, lastAccrualAt: Date.now() - DAY_MS });
+    const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
+    await seedInvestment(t, user._id, planId, { amount: 1000, lastAccrualAt: Date.now() - WEEK_MS });
 
-    await t.mutation(internal.investments.accrueDailyProfit, {});
-    const secondRun = await t.mutation(internal.investments.accrueDailyProfit, {});
+    await t.mutation(internal.investments.accrueWeeklyProfit, {});
+    const secondRun = await t.mutation(internal.investments.accrueWeeklyProfit, {});
     expect(secondRun).toEqual({ accruedCount: 0, scanned: 1 });
 
     const balance = await t.run((ctx) =>
@@ -109,30 +109,40 @@ describe("investments.accrueDailyProfit", () => {
   it("skips admin_paused, admin_ended, pending, completed, and cancelled investments", async () => {
     const t = convexTest(schema, convexTestModules);
     const { user } = await createVerifiedUser(t);
-    const planId = await seedPlan(t, { dailyReturnPercent: 1 });
+    const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
 
     for (const status of ["pending", "admin_paused", "admin_ended", "completed", "cancelled"] as const) {
-      await seedInvestment(t, user._id, planId, { status, lastAccrualAt: Date.now() - DAY_MS });
+      await seedInvestment(t, user._id, planId, { status, lastAccrualAt: Date.now() - WEEK_MS });
     }
 
-    const result = await t.mutation(internal.investments.accrueDailyProfit, {});
+    const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
     expect(result).toEqual({ accruedCount: 0, scanned: 0 });
 
     const accruals = await t.run((ctx) => ctx.db.query("profitAccruals").collect());
     expect(accruals).toHaveLength(0);
   });
 
-  it("accrues for an investment with no prior lastAccrualAt (first day active)", async () => {
+  it("accrues for an investment with no prior lastAccrualAt (first week active)", async () => {
     const t = convexTest(schema, convexTestModules);
     const { user } = await createVerifiedUser(t);
-    const planId = await seedPlan(t, { dailyReturnPercent: 2 });
+    const planId = await seedPlan(t, { weeklyReturnPercent: 2 });
     await seedInvestment(t, user._id, planId, { amount: 500 });
 
-    const result = await t.mutation(internal.investments.accrueDailyProfit, {});
+    const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
     expect(result.accruedCount).toBe(1);
 
     const accruals = await t.run((ctx) => ctx.db.query("profitAccruals").collect());
     expect(accruals).toMatchObject([{ amount: 10 }]);
+  });
+
+  it("does not re-accrue an investment accrued less than a week ago", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { user } = await createVerifiedUser(t);
+    const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
+    await seedInvestment(t, user._id, planId, { amount: 1000, lastAccrualAt: Date.now() - DAY_MS });
+
+    const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
+    expect(result).toEqual({ accruedCount: 0, scanned: 1 });
   });
 });
 

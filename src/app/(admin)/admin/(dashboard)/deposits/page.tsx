@@ -91,8 +91,19 @@ function DepositDrawer({ depositId, onClose }: { depositId: Id<"deposits">; onCl
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-muted-foreground">Transaction hash</span>
-              <code className="break-all rounded bg-muted p-2 text-xs">{detail.txHash}</code>
+              <span className="text-muted-foreground">Transaction proof</span>
+              {detail.proofUrl ? (
+                <a
+                  href={detail.proofUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline"
+                >
+                  View uploaded proof
+                </a>
+              ) : (
+                <span className="text-sm text-muted-foreground">Not provided</span>
+              )}
             </div>
           </>
         ) : (

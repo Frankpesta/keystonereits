@@ -6,6 +6,7 @@ import { LogOutIcon } from "lucide-react";
 import { api } from "@/lib/convex-api";
 import { useSessionToken } from "@/lib/auth/session-context";
 import { adminLogoutAction } from "@/app/(admin)/admin/actions";
+import { AdminNotificationBell } from "@/components/admin/admin-notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +41,7 @@ export function AdminHeader() {
       <div className="flex-1" />
       <div className="flex items-center gap-3">
         {admin && <Badge variant="secondary">{formatLabel(admin.role)}</Badge>}
+        <AdminNotificationBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

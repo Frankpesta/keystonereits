@@ -38,6 +38,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_investments from "../lib/investments.js";
 import type * as lib_ledger from "../lib/ledger.js";
+import type * as lib_notify from "../lib/notify.js";
 import type * as lib_otp from "../lib/otp.js";
 import type * as lib_password from "../lib/password.js";
 import type * as lib_rateLimit from "../lib/rateLimit.js";
@@ -92,6 +93,7 @@ declare const fullApi: ApiFromModules<{
   "lib/crypto": typeof lib_crypto;
   "lib/investments": typeof lib_investments;
   "lib/ledger": typeof lib_ledger;
+  "lib/notify": typeof lib_notify;
   "lib/otp": typeof lib_otp;
   "lib/password": typeof lib_password;
   "lib/rateLimit": typeof lib_rateLimit;

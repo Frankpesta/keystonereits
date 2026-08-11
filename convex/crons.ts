@@ -9,11 +9,11 @@ import { internal } from "./_generated/api";
  */
 const crons = cronJobs();
 
-// 00:05 UTC daily. Runs first so a same-day maturity still reflects that
-// day's final accrual before processMaturities completes the investment.
-crons.cron("accrue-daily-profit", "5 0 * * *", internal.investments.accrueDailyProfit, {});
+// 00:05 UTC every Monday. Runs first so a same-day maturity still reflects
+// that week's final accrual before processMaturities completes the investment.
+crons.cron("accrue-weekly-profit", "5 0 * * 1", internal.investments.accrueWeeklyProfit, {});
 
-// 00:15 UTC daily.
+// 00:15 UTC daily — maturities can land on any day, not just the weekly accrual day.
 crons.cron("process-maturing-investments", "15 0 * * *", internal.investments.processMaturities, {});
 
 export default crons;

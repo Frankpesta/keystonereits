@@ -47,7 +47,7 @@ export function PlanComparisonTable() {
                   <TableRow key={plan._id}>
                     <TableCell className="font-display font-semibold text-foreground">{plan.name}</TableCell>
                     <TableCell>{formatUsd(plan.minAmount)}</TableCell>
-                    <TableCell>{(plan.dailyReturnPercent * 7).toFixed(0)}%</TableCell>
+                    <TableCell>{plan.weeklyReturnPercent.toFixed(0)}%</TableCell>
                     <TableCell>{Math.round(plan.durationDays / 365)} Year</TableCell>
                     <TableCell>Weekly</TableCell>
                   </TableRow>

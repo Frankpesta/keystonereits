@@ -84,8 +84,8 @@ export default function InvestmentDetailPage() {
                 <dd className="font-medium">{investment.plan.durationDays} days</dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Daily return</dt>
-                <dd className="font-medium">{investment.plan.dailyReturnPercent.toFixed(2)}%</dd>
+                <dt className="text-muted-foreground">Weekly return</dt>
+                <dd className="font-medium">{investment.plan.weeklyReturnPercent.toFixed(2)}%</dd>
               </div>
             </dl>
           )}

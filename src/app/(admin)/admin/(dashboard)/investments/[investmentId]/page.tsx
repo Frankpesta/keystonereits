@@ -166,14 +166,14 @@ export default function AdminInvestmentDetailPage() {
         <OverrideDialog
           action="pause"
           label="Pause"
-          description="Pausing stops future daily profit accrual for this investment until restarted."
+          description="Pausing stops future weekly profit accrual for this investment until restarted."
           onConfirm={(reason) => runOverride(pause, reason)}
           disabled={!canPause}
         />
         <OverrideDialog
           action="restart"
           label="Restart"
-          description="Restarting resumes daily accrual for this investment."
+          description="Restarting resumes weekly accrual for this investment."
           onConfirm={(reason) => runOverride(restart, reason)}
           disabled={!canRestart}
         />

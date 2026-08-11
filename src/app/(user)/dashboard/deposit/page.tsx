@@ -3,12 +3,15 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
-import { CopyIcon, Loader2Icon } from "lucide-react";
+import { CopyIcon, Loader2Icon, UploadIcon } from "lucide-react";
 
 import { api } from "@/lib/convex-api";
+import type { Id } from "@/lib/convex-api";
 import { useSessionToken } from "@/lib/auth/session-context";
 import { getConvexErrorMessage } from "@/lib/convex-error";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { uploadFile } from "@/lib/upload-file";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +19,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+function ProofUploadField({
+  fileName,
+  onUploaded,
+}: {
+  fileName: string | null;
+  onUploaded: (fileId: Id<"_storage">, name: string) => void;
+}) {
+  const sessionToken = useSessionToken();
+  const generateUploadUrl = useMutation(api.deposits.generateUploadUrl);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl({ sessionToken });
+      const fileId = await uploadFile(uploadUrl, file);
+      onUploaded(fileId, file.name);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed p-4 text-center hover:bg-muted/50",
+        fileName && "border-primary/40 bg-primary/5"
+      )}
+    >
+      {uploading ? (
+        <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+      ) : (
+        <UploadIcon className="size-5 text-muted-foreground" />
+      )}
+      <span className="text-sm font-medium">{fileName ?? "Click to upload proof of payment"}</span>
+      <span className="text-xs text-muted-foreground">JPG, PNG, or PDF, up to 10MB</span>
+      <input
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        disabled={uploading}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+        }}
+      />
+    </label>
+  );
+}
 
 // Used only until convex/settings.ts's platformConfig query resolves —
 // matches DEFAULT_PLATFORM_CONFIG.fiatDepositMinimumUsd server-side.
@@ -33,7 +88,8 @@ function CryptoTab() {
 
   const [optionKey, setOptionKey] = useState("");
   const [amount, setAmount] = useState("");
-  const [txHash, setTxHash] = useState("");
+  const [proofFileId, setProofFileId] = useState<Id<"_storage"> | null>(null);
+  const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const depositList = deposits ?? [];
@@ -50,8 +106,8 @@ function CryptoTab() {
       toast.error("Enter a valid amount.");
       return;
     }
-    if (!txHash.trim()) {
-      toast.error("Enter the transaction hash.");
+    if (!proofFileId) {
+      toast.error("Upload your transaction proof.");
       return;
     }
 
@@ -62,11 +118,12 @@ function CryptoTab() {
         amountUsd: amountNum,
         currency: selected.currency,
         network: selected.network,
-        txHash: txHash.trim(),
+        proofFileId,
       });
       toast.success("Deposit submitted. We'll credit it once verified.");
       setAmount("");
-      setTxHash("");
+      setProofFileId(null);
+      setProofFileName(null);
     } catch (err) {
       toast.error(getConvexErrorMessage(err));
     } finally {
@@ -132,8 +189,14 @@ function CryptoTab() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="txHash">Transaction hash</Label>
-                <Input id="txHash" value={txHash} onChange={(e) => setTxHash(e.target.value)} />
+                <Label>Transaction Proof</Label>
+                <ProofUploadField
+                  fileName={proofFileName}
+                  onUploaded={(fileId, name) => {
+                    setProofFileId(fileId);
+                    setProofFileName(name);
+                  }}
+                />
               </div>
             </div>
             <Button type="submit" disabled={submitting} className="self-end">

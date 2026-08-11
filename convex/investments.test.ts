@@ -5,7 +5,7 @@ import { ConvexError } from "convex/values";
 import { api } from "./_generated/api";
 import schema from "./schema";
 import { convexTestModules } from "./test.setup";
-import { createVerifiedUser } from "./lib/testHelpers";
+import { createVerifiedUser, createAdmin } from "./lib/testHelpers";
 import type { Id } from "./_generated/dataModel";
 
 async function seedPlan(
@@ -29,8 +29,8 @@ async function seedPlan(
       minAmount: overrides.minAmount ?? 200,
       maxAmount: overrides.maxAmount ?? 10_000,
       durationDays: overrides.durationDays ?? 365,
-      dailyReturnPercent: 4 / 7,
-      accrualFrequency: "daily",
+      weeklyReturnPercent: 4,
+      accrualFrequency: "weekly",
       status: (overrides.status ?? "active") as "active",
       createdBy: adminId,
       createdAt: Date.now(),
@@ -66,7 +66,9 @@ describe("investments.invest", () => {
     expect(summary).toHaveLength(1);
     expect(summary[0].plan?.name).toBe("Foundation");
 
-    const notifications = await t.run((ctx) => ctx.db.query("notifications").collect());
+    const notifications = await t.run((ctx) =>
+      ctx.db.query("notifications").withIndex("by_user", (q) => q.eq("userId", user._id)).collect()
+    );
     expect(notifications).toMatchObject([{ userId: user._id, type: "investment_created" }]);
 
     vi.useFakeTimers();
@@ -143,5 +145,25 @@ describe("investments.invest", () => {
       investmentId: investmentId as Id<"investments">,
     });
     expect(own.amount).toBe(1000);
+  });
+
+  it("notifies investment/super admins but not other roles", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const planId = await seedPlan(t);
+    const { sessionToken } = await createVerifiedUser(t, { available: 5000 });
+    const { admin: investmentAdmin } = await createAdmin(t, { role: "investment" });
+    const { admin: supportAdmin } = await createAdmin(t, { role: "support" });
+
+    await t.mutation(api.investments.invest, { sessionToken, planId, amount: 1000 });
+
+    const investmentAdminNotifications = await t.run((ctx) =>
+      ctx.db.query("notifications").withIndex("by_admin", (q) => q.eq("adminId", investmentAdmin._id)).collect()
+    );
+    expect(investmentAdminNotifications).toMatchObject([{ type: "admin_investment_created" }]);
+
+    const supportAdminNotifications = await t.run((ctx) =>
+      ctx.db.query("notifications").withIndex("by_admin", (q) => q.eq("adminId", supportAdmin._id)).collect()
+    );
+    expect(supportAdminNotifications).toHaveLength(0);
   });
 });

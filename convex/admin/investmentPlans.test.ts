@@ -13,7 +13,7 @@ const VALID = {
   minAmount: 200,
   maxAmount: 9_999,
   durationDays: 365,
-  dailyReturnPercent: 0.57,
+  weeklyReturnPercent: 4,
 };
 
 describe("admin/investmentPlans.create", () => {

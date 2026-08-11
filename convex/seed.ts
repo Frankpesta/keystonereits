@@ -8,7 +8,7 @@ import {
   type CryptoDepositOption,
 } from "./settings";
 import { writeTransaction } from "./lib/ledger";
-import { DAY_MS, dateKey } from "./lib/time";
+import { DAY_MS, WEEK_MS, dateKey } from "./lib/time";
 
 /**
  * Dev-only seed data for manual QA across every later phase. Run with:
@@ -24,7 +24,6 @@ const DEMO_USER_STARTING_BALANCE = 5_000;
 const PLAN_DURATION_DAYS = 365;
 
 // Minimum participation + weekly ROI from docs/09-marketing-site-copy.md §8.
-// The schema accrues daily, so dailyReturnPercent = weeklyReturnPercent / 7.
 const SEED_PLANS = [
   {
     name: "Foundation",
@@ -149,8 +148,8 @@ export const seedDatabase = internalMutation({
         minAmount: plan.minAmount,
         maxAmount: plan.maxAmount,
         durationDays: PLAN_DURATION_DAYS,
-        dailyReturnPercent: plan.weeklyReturnPercent / 7,
-        accrualFrequency: "daily",
+        weeklyReturnPercent: plan.weeklyReturnPercent,
+        accrualFrequency: "weekly",
         status: "active",
         createdBy: admin._id,
         createdAt: now,
@@ -210,11 +209,11 @@ export const seedDatabase = internalMutation({
       const investmentAmount = 1_000;
       const startDate = now - elapsedDays * DAY_MS;
       const maturityDate = startDate + foundationPlan.durationDays * DAY_MS;
-      const dailyAccrualAmount = Math.round(
-        investmentAmount * (foundationPlan.dailyReturnPercent / 100) * 100
+      const weeklyAccrualAmount = Math.round(
+        investmentAmount * (foundationPlan.weeklyReturnPercent / 100) * 100
       ) / 100;
-      const accrualDaysSeeded = 10;
-      const seededProfit = Math.round(dailyAccrualAmount * accrualDaysSeeded * 100) / 100;
+      const accrualWeeksSeeded = 5;
+      const seededProfit = Math.round(weeklyAccrualAmount * accrualWeeksSeeded * 100) / 100;
 
       const investmentId = await ctx.db.insert("investments", {
         userId: user._id,
@@ -235,13 +234,13 @@ export const seedDatabase = internalMutation({
         relatedId: investmentId,
       });
 
-      for (let i = 0; i < accrualDaysSeeded; i++) {
+      for (let i = 0; i < accrualWeeksSeeded; i++) {
         await ctx.db.insert("profitAccruals", {
           userId: user._id,
           investmentId,
           planId: foundationPlan._id,
-          amount: dailyAccrualAmount,
-          accrualDate: dateKey(now - i * DAY_MS),
+          amount: weeklyAccrualAmount,
+          accrualDate: dateKey(now - i * WEEK_MS),
         });
       }
 
@@ -324,7 +323,7 @@ export const seedDatabase = internalMutation({
         createdAt: now - DAY_MS,
       });
 
-      summary.qaData = `created (1 investment ~40% elapsed, ${accrualDaysSeeded} accrual rows, 1 credited deposit, 1 pending withdrawal, 2 notifications, 1 support ticket)`;
+      summary.qaData = `created (1 investment ~40% elapsed, ${accrualWeeksSeeded} accrual rows, 1 credited deposit, 1 pending withdrawal, 2 notifications, 1 support ticket)`;
     }
 
     return summary;

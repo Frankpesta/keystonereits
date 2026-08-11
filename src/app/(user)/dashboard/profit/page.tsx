@@ -35,7 +35,7 @@ export default function ProfitPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-2xl font-semibold">Profit Balance</h1>
-        <p className="text-muted-foreground">Your daily investment returns over time.</p>
+        <p className="text-muted-foreground">Your weekly investment returns over time.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -57,8 +57,8 @@ export default function ProfitPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Daily accruals</CardTitle>
-          <CardDescription>Profit credited to your account each day.</CardDescription>
+          <CardTitle>Weekly accruals</CardTitle>
+          <CardDescription>Profit credited to your account each week.</CardDescription>
         </CardHeader>
         <CardContent>
           {series && series.length > 0 ? (

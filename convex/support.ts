@@ -4,6 +4,10 @@ import { internal } from "./_generated/api";
 import { getCurrentUser } from "./lib/auth";
 import { getPlatformConfig } from "./settings";
 import { writeTransaction } from "./lib/ledger";
+import { notifyAdminsByRole } from "./lib/notify";
+import type { Doc } from "./_generated/dataModel";
+
+const DEPOSIT_NOTIFY_ROLES: Doc<"admins">["role"][] = ["super", "finance"];
 
 export const generateUploadUrl = mutation({
   args: { sessionToken: v.string() },
@@ -86,9 +90,9 @@ export const postMessage = mutation({
     });
     await ctx.db.patch(args.ticketId, { status: "pending_admin", updatedAt: now });
 
-    // Admins have no in-app notifications table (schema only has one for
-    // users) — an assigned admin gets emailed directly instead. An
-    // unassigned ticket just relies on the admin queue to surface it.
+    // A support reply isn't one of the "notify admins on user action" event
+    // types wired up elsewhere — an assigned admin gets emailed directly
+    // instead. An unassigned ticket just relies on the admin queue to surface it.
     if (ticket.assignedTo) {
       const assignedAdmin = await ctx.db.get(ticket.assignedTo);
       if (assignedAdmin) {
@@ -165,6 +169,12 @@ export const requestFiatDeposit = mutation({
       body: `Your $${args.amountUsd.toLocaleString()} fiat deposit request was received — check your support ticket for bank details.`,
       read: false,
       createdAt: now,
+    });
+    await notifyAdminsByRole(ctx, {
+      roles: DEPOSIT_NOTIFY_ROLES,
+      type: "admin_deposit_submitted",
+      title: "New Deposit Submitted",
+      body: `${user.firstName} ${user.lastName} requested a $${args.amountUsd.toLocaleString()} fiat deposit.`,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendDepositReceivedEmail, {
       to: user.email,

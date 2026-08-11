@@ -66,7 +66,7 @@ export function InvestmentPlanCards() {
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Weekly ROI</dt>
-              <dd className="font-medium text-foreground">{(plan.dailyReturnPercent * 7).toFixed(0)}%</dd>
+              <dd className="font-medium text-foreground">{plan.weeklyReturnPercent.toFixed(0)}%</dd>
             </div>
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">Duration</dt>

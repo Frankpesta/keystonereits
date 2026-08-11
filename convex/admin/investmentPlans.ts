@@ -13,14 +13,14 @@ const STATUS = v.union(
   v.literal("archived")
 );
 
-function validatePlanFields(fields: { minAmount: number; maxAmount: number; durationDays: number; dailyReturnPercent: number }) {
+function validatePlanFields(fields: { minAmount: number; maxAmount: number; durationDays: number; weeklyReturnPercent: number }) {
   if (!Number.isFinite(fields.minAmount) || fields.minAmount <= 0) throw new ConvexError("Minimum amount must be positive.");
   if (!Number.isFinite(fields.maxAmount) || fields.maxAmount <= fields.minAmount) {
     throw new ConvexError("Maximum amount must be greater than the minimum.");
   }
   if (!Number.isFinite(fields.durationDays) || fields.durationDays <= 0) throw new ConvexError("Duration must be positive.");
-  if (!Number.isFinite(fields.dailyReturnPercent) || fields.dailyReturnPercent <= 0) {
-    throw new ConvexError("Daily return must be positive.");
+  if (!Number.isFinite(fields.weeklyReturnPercent) || fields.weeklyReturnPercent <= 0) {
+    throw new ConvexError("Weekly return must be positive.");
   }
 }
 
@@ -43,7 +43,7 @@ export const create = mutation({
     minAmount: v.number(),
     maxAmount: v.number(),
     durationDays: v.number(),
-    dailyReturnPercent: v.number(),
+    weeklyReturnPercent: v.number(),
   },
   handler: async (ctx, args) => {
     const admin = await getCurrentAdmin(ctx, args.sessionToken);
@@ -60,8 +60,8 @@ export const create = mutation({
       minAmount: args.minAmount,
       maxAmount: args.maxAmount,
       durationDays: args.durationDays,
-      dailyReturnPercent: args.dailyReturnPercent,
-      accrualFrequency: "daily",
+      weeklyReturnPercent: args.weeklyReturnPercent,
+      accrualFrequency: "weekly",
       status: "draft",
       createdBy: admin._id,
       createdAt: Date.now(),
@@ -88,7 +88,7 @@ export const update = mutation({
     minAmount: v.number(),
     maxAmount: v.number(),
     durationDays: v.number(),
-    dailyReturnPercent: v.number(),
+    weeklyReturnPercent: v.number(),
   },
   handler: async (ctx, args) => {
     const admin = await getCurrentAdmin(ctx, args.sessionToken);
@@ -107,7 +107,7 @@ export const update = mutation({
       minAmount: plan.minAmount,
       maxAmount: plan.maxAmount,
       durationDays: plan.durationDays,
-      dailyReturnPercent: plan.dailyReturnPercent,
+      weeklyReturnPercent: plan.weeklyReturnPercent,
     };
     await ctx.db.patch(args.planId, {
       name,
@@ -115,7 +115,7 @@ export const update = mutation({
       minAmount: args.minAmount,
       maxAmount: args.maxAmount,
       durationDays: args.durationDays,
-      dailyReturnPercent: args.dailyReturnPercent,
+      weeklyReturnPercent: args.weeklyReturnPercent,
     });
 
     await logAdminAction(ctx, {
@@ -129,7 +129,7 @@ export const update = mutation({
         minAmount: args.minAmount,
         maxAmount: args.maxAmount,
         durationDays: args.durationDays,
-        dailyReturnPercent: args.dailyReturnPercent,
+        weeklyReturnPercent: args.weeklyReturnPercent,
       },
     });
 

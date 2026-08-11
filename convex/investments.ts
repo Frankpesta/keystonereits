@@ -4,7 +4,11 @@ import { internal } from "./_generated/api";
 import { getCurrentUser } from "./lib/auth";
 import { writeTransaction } from "./lib/ledger";
 import { returnPrincipalToAvailable } from "./lib/investments";
-import { DAY_MS, dateKey } from "./lib/time";
+import { DAY_MS, WEEK_MS, dateKey } from "./lib/time";
+import { notifyAdminsByRole } from "./lib/notify";
+import type { Doc } from "./_generated/dataModel";
+
+const INVESTMENT_NOTIFY_ROLES: Doc<"admins">["role"][] = ["super", "investment"];
 
 export const invest = mutation({
   args: {
@@ -69,6 +73,12 @@ export const invest = mutation({
       read: false,
       createdAt: now,
     });
+    await notifyAdminsByRole(ctx, {
+      roles: INVESTMENT_NOTIFY_ROLES,
+      type: "admin_investment_created",
+      title: "New Investment",
+      body: `${user.firstName} ${user.lastName} invested $${args.amount.toLocaleString()} in the ${plan.name} plan.`,
+    });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendInvestmentCreatedEmail, {
       to: user.email,
       firstName: user.firstName,
@@ -115,17 +125,17 @@ export const myInvestment = query({
 });
 
 /**
- * Runs daily via convex/crons.ts. Scans every `active` investment — this
+ * Runs weekly via convex/crons.ts. Scans every `active` investment — this
  * intentionally excludes pending/admin_paused/admin_ended/completed/cancelled,
  * so a paused or ended investment simply stops accruing until (if ever)
  * restarted. Single-transaction scan, same dev/MVP-scale tradeoff noted in
  * convex/admin/dashboard.ts — reach for batched scheduler continuations if
  * the active-investment count ever approaches Convex's per-mutation limits.
  */
-export const accrueDailyProfit = internalMutation({
+export const accrueWeeklyProfit = internalMutation({
   args: {},
   handler: async (ctx) => {
-    const today = dateKey(Date.now());
+    const now = Date.now();
     const investments = await ctx.db
       .query("investments")
       .withIndex("by_status", (q) => q.eq("status", "active"))
@@ -133,22 +143,21 @@ export const accrueDailyProfit = internalMutation({
 
     let accruedCount = 0;
     for (const investment of investments) {
-      // Idempotency: a cron re-run (or manual trigger) the same day must not double-credit.
-      if (investment.lastAccrualAt && dateKey(investment.lastAccrualAt) === today) continue;
+      // Idempotency: a cron re-run (or manual trigger) within the same week must not double-credit.
+      if (investment.lastAccrualAt && now - investment.lastAccrualAt < WEEK_MS) continue;
 
       const plan = await ctx.db.get(investment.planId);
       if (!plan) continue;
 
-      const amount = Math.round(investment.amount * (plan.dailyReturnPercent / 100) * 100) / 100;
+      const amount = Math.round(investment.amount * (plan.weeklyReturnPercent / 100) * 100) / 100;
       if (amount <= 0) continue;
 
-      const now = Date.now();
       await ctx.db.insert("profitAccruals", {
         userId: investment.userId,
         investmentId: investment._id,
         planId: plan._id,
         amount,
-        accrualDate: today,
+        accrualDate: dateKey(now),
       });
       await ctx.db.patch(investment._id, {
         accruedProfit: investment.accruedProfit + amount,
@@ -179,7 +188,8 @@ export const accrueDailyProfit = internalMutation({
 });
 
 /**
- * Runs daily via convex/crons.ts, after accrueDailyProfit. Matures
+ * Runs daily via convex/crons.ts (independent of accrueWeeklyProfit's
+ * weekly schedule, since maturities can land on any day). Matures
  * investments whose term has ended and returns principal — see
  * returnPrincipalToAvailable's docstring for the policy this implements.
  */

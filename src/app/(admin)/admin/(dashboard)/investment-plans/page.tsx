@@ -41,7 +41,7 @@ function PlanFormDialog({ plan, trigger }: { plan?: Plan; trigger: React.ReactNo
   const [minAmount, setMinAmount] = useState(String(plan?.minAmount ?? ""));
   const [maxAmount, setMaxAmount] = useState(String(plan?.maxAmount ?? ""));
   const [durationDays, setDurationDays] = useState(String(plan?.durationDays ?? ""));
-  const [dailyReturnPercent, setDailyReturnPercent] = useState(String(plan?.dailyReturnPercent ?? ""));
+  const [weeklyReturnPercent, setWeeklyReturnPercent] = useState(String(plan?.weeklyReturnPercent ?? ""));
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -53,7 +53,7 @@ function PlanFormDialog({ plan, trigger }: { plan?: Plan; trigger: React.ReactNo
       minAmount: Number(minAmount),
       maxAmount: Number(maxAmount),
       durationDays: Number(durationDays),
-      dailyReturnPercent: Number(dailyReturnPercent),
+      weeklyReturnPercent: Number(weeklyReturnPercent),
     };
     setSubmitting(true);
     try {
@@ -75,7 +75,7 @@ function PlanFormDialog({ plan, trigger }: { plan?: Plan; trigger: React.ReactNo
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{plan ? "Edit plan" : "New investment plan"}</DialogTitle>
           <DialogDescription>{plan ? "Update the plan's terms." : "New plans start as drafts."}</DialogDescription>
@@ -103,14 +103,14 @@ function PlanFormDialog({ plan, trigger }: { plan?: Plan; trigger: React.ReactNo
               <Input id="plan-duration" type="number" min={1} value={durationDays} onChange={(e) => setDurationDays(e.target.value)} />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="plan-return">Daily return (%)</Label>
+              <Label htmlFor="plan-return">Weekly return (%)</Label>
               <Input
                 id="plan-return"
                 type="number"
                 min={0}
                 step="0.01"
-                value={dailyReturnPercent}
-                onChange={(e) => setDailyReturnPercent(e.target.value)}
+                value={weeklyReturnPercent}
+                onChange={(e) => setWeeklyReturnPercent(e.target.value)}
               />
             </div>
           </div>
@@ -198,8 +198,8 @@ export default function AdminInvestmentPlansPage() {
                 <span className="font-medium">{plan.durationDays} days</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Daily return</span>
-                <span className="font-medium">{plan.dailyReturnPercent.toFixed(2)}%</span>
+                <span className="text-muted-foreground">Weekly return</span>
+                <span className="font-medium">{plan.weeklyReturnPercent.toFixed(2)}%</span>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">

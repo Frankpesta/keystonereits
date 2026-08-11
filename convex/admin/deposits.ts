@@ -40,8 +40,9 @@ export const detail = query({
     if (!deposit) throw new ConvexError("Deposit not found.");
     const user = await ctx.db.get(deposit.userId);
     const supportTicket = deposit.supportTicketId ? await ctx.db.get(deposit.supportTicketId) : null;
+    const proofUrl = deposit.proofFileId ? await ctx.storage.getUrl(deposit.proofFileId) : null;
 
-    return { ...deposit, user, supportTicket };
+    return { ...deposit, user, supportTicket, proofUrl };
   },
 });
 

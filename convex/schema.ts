@@ -93,7 +93,8 @@ export default defineSchema({
     amountUsd: v.number(),
     currency: v.optional(v.string()), // e.g. "USDT", "BTC" for crypto
     network: v.optional(v.string()), // e.g. "TRC20", "ERC20"
-    txHash: v.optional(v.string()), // crypto: user-submitted hash
+    txHash: v.optional(v.string()), // legacy: pre-file-upload deposits only, no longer collected
+    proofFileId: v.optional(v.id("_storage")), // crypto: user-uploaded proof of payment
     supportTicketId: v.optional(v.id("supportTickets")), // fiat: linked ticket
     status: v.union(
       v.literal("pending"), v.literal("under_review"),
@@ -103,7 +104,7 @@ export default defineSchema({
     verifiedAt: v.optional(v.number()),
     note: v.optional(v.string()),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]).index("by_status", ["status"]).index("by_txHash", ["txHash"]),
+  }).index("by_user", ["userId"]).index("by_status", ["status"]),
 
   // ---------- WITHDRAWALS ----------
   withdrawals: defineTable({
@@ -130,8 +131,8 @@ export default defineSchema({
     minAmount: v.number(),
     maxAmount: v.number(),
     durationDays: v.number(),
-    dailyReturnPercent: v.number(),
-    accrualFrequency: v.union(v.literal("daily")),
+    weeklyReturnPercent: v.number(),
+    accrualFrequency: v.union(v.literal("weekly")),
     status: v.union(
       v.literal("draft"), v.literal("active"), v.literal("paused"),
       v.literal("closed"), v.literal("archived")
@@ -231,14 +232,22 @@ export default defineSchema({
   }).index("by_ticket", ["ticketId"]),
 
   // ---------- NOTIFICATIONS ----------
+  // Exactly one of userId/adminId is set per row (a user notification or an
+  // admin notification) — fanned out one row per recipient on write, same
+  // pattern as the rest of this table.
   notifications: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
+    adminId: v.optional(v.id("admins")),
     type: v.string(),
     title: v.string(),
     body: v.string(),
     read: v.boolean(),
     createdAt: v.number(),
-  }).index("by_user", ["userId"]).index("by_user_read", ["userId", "read"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_read", ["userId", "read"])
+    .index("by_admin", ["adminId"])
+    .index("by_admin_read", ["adminId", "read"]),
 
   // ---------- EMAIL LOG ----------
   emailLog: defineTable({

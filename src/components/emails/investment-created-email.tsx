@@ -18,7 +18,7 @@ export function InvestmentCreatedEmail({
       <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
       <Text style={{ margin: "0 0 16px" }}>
         Your investment of <strong>${amountUsd.toLocaleString()}</strong> in the <strong>{planName}</strong> plan is
-        now active and earning daily returns. It matures on <strong>{maturityDate}</strong>.
+        now active and earning weekly returns. It matures on <strong>{maturityDate}</strong>.
       </Text>
       <Button
         href={`${getAppUrl()}/dashboard/investments`}
