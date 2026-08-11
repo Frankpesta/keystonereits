@@ -6,7 +6,6 @@ import { CheckIcon } from "lucide-react";
 import { api } from "@/lib/convex-api";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGsap, gsap } from "@/hooks/use-gsap";
 
 function formatUsd(amount: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
@@ -14,25 +13,15 @@ function formatUsd(amount: number) {
   );
 }
 
-/** Reads live from Convex (status: "active") — never hardcoded, so admin plan edits show up immediately. */
+/**
+ * Reads live from Convex (status: "active") — never hardcoded, so admin plan
+ * edits show up immediately. No entrance animation of its own — the parent
+ * `Section` wrapper already fades the whole block in on scroll; a second,
+ * data-dependent stagger here used to race that (and Convex's async load)
+ * and could get caught mid-fade when this section was already in view on load.
+ */
 export function InvestmentPlanCards() {
   const plans = useQuery(api.investmentPlans.listActive);
-
-  const scope = useGsap<HTMLDivElement>(
-    ({ scope: gridScope }) => {
-      if (!gridScope.current) return;
-      gsap.from(gridScope.current.children, {
-        opacity: 0,
-        y: 24,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: "power2.out",
-        force3D: false,
-        clearProps: "transform",
-      });
-    },
-    [plans]
-  );
 
   if (plans === undefined) {
     return (
@@ -49,7 +38,7 @@ export function InvestmentPlanCards() {
   }
 
   return (
-    <div ref={scope} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {plans.map((plan) => (
         <div
           key={plan._id}
