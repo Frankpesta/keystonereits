@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 
 import { api } from "@/lib/convex-api";
@@ -10,6 +10,7 @@ import type { Id } from "@/lib/convex-api";
 import { useSessionToken } from "@/lib/auth/session-context";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export default function AdminInvestmentsPage() {
   const sessionToken = useSessionToken();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const planFilter = searchParams.get("plan") as Id<"investmentPlans"> | null;
 
@@ -76,28 +78,50 @@ export default function AdminInvestmentsPage() {
                 <TableHead>Accrued</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Matures</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(investments ?? []).map((inv) => (
-                <TableRow key={inv._id}>
-                  <TableCell>
-                    <Link href={`/admin/investments/${inv._id}`} className="font-medium hover:underline">
-                      {inv.userName}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{inv.planName}</TableCell>
-                  <TableCell>{formatCurrency(inv.amount)}</TableCell>
-                  <TableCell>{formatCurrency(inv.accruedProfit)}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={inv.status} />
-                  </TableCell>
-                  <TableCell>{formatDate(inv.maturityDate)}</TableCell>
-                </TableRow>
-              ))}
+              {(investments ?? []).map((inv) => {
+                const href = `/admin/investments/${inv._id}`;
+                return (
+                  <TableRow
+                    key={inv._id}
+                    className="cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(href)}
+                    onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        router.push(href);
+                      }
+                    }}
+                  >
+                    <TableCell className="font-medium">{inv.userName}</TableCell>
+                    <TableCell>{inv.planName}</TableCell>
+                    <TableCell>{formatCurrency(inv.amount)}</TableCell>
+                    <TableCell>{formatCurrency(inv.accruedProfit)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={inv.status} />
+                    </TableCell>
+                    <TableCell>{formatDate(inv.maturityDate)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        onClick={(e: MouseEvent<HTMLButtonElement>) => e.stopPropagation()}
+                      >
+                        <Link href={href}>View Details</Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {investments && investments.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No investments match these filters.
                   </TableCell>
                 </TableRow>
