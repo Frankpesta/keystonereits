@@ -20,6 +20,7 @@ import { HowItWorksSteps } from "@/components/marketing/how-it-works-steps";
 import { ClosingCta } from "@/components/marketing/closing-cta";
 import { PageFaq } from "@/components/marketing/page-faq";
 import { ReturnsDisclosure } from "@/components/marketing/returns-disclosure";
+import { TestimonialSlideshow } from "@/components/marketing/testimonial-slideshow";
 import { TrustStrip } from "@/components/marketing/trust-strip";
 import { FramedImage } from "@/components/marketing/framed-image";
 import { unsplashUrl, MARKETING_IMAGES } from "@/lib/marketing-images";
@@ -356,6 +357,29 @@ export default function HomePage() {
         <p className="mt-10 text-center font-medium text-foreground">
           We handle the property operations. You participate in the opportunity.
         </p>
+      </Section>
+
+      {/* Section 6.5 — Investor Testimonials */}
+      <Section>
+        <div className="mx-auto max-w-2xl text-center">
+          <SectionKicker>Investor Testimonials</SectionKicker>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-foreground sm:text-4xl">
+            What our investors are saying
+          </h2>
+        </div>
+        <div className="mt-12">
+          <TestimonialSlideshow />
+        </div>
+        <div className="mx-auto mt-16 max-w-2xl text-center">
+          <SectionKicker>Real People. Real Experiences.</SectionKicker>
+          <p className="mt-4 text-muted-foreground">
+            Every investment journey is different. We encourage prospective investors to review the available
+            plans, understand the applicable terms, and make informed decisions before participating.
+          </p>
+          <Button className="mt-8" asChild>
+            <Link href="/investment-plans">Explore Investment Plans</Link>
+          </Button>
+        </div>
       </Section>
 
       {/* Section 7 — Investment Plans teaser */}
