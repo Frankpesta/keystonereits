@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const KYC_BANNER_COPY: Record<string, string> = {
-  not_started: "Verify your identity to unlock deposits, investments, and withdrawals.",
+  not_started: "Verify your identity to unlock investing in our higher-tier plans.",
   pending: "Your KYC application is submitted and awaiting review.",
   under_review: "Our team is currently reviewing your KYC application.",
   rejected: "Your KYC application was rejected. Please review and resubmit.",

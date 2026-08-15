@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -24,10 +25,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SuccessBurst } from "@/components/shared/success-burst";
 
-type Plan = Doc<"investmentPlans">;
+type Plan = Doc<"investmentPlans"> & { requiresKyc: boolean };
 
 function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   const sessionToken = useSessionToken();
+  const user = useQuery(api.users.currentUser, { sessionToken });
   const balance = useQuery(api.balances.myBalance, { sessionToken });
   const invest = useMutation(api.investments.invest);
   const [amount, setAmount] = useState(String(plan.minAmount));
@@ -36,8 +38,10 @@ function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
 
   const amountNum = Number(amount);
   const available = balance?.available ?? 0;
-  const error =
-    !Number.isFinite(amountNum) || amountNum <= 0
+  const kycBlocked = plan.requiresKyc && user?.kycStatus !== "approved";
+  const error = kycBlocked
+    ? "Complete KYC verification before investing in this plan."
+    : !Number.isFinite(amountNum) || amountNum <= 0
       ? "Enter a valid amount."
       : amountNum < plan.minAmount || amountNum > plan.maxAmount
         ? `Amount must be between ${formatCurrency(plan.minAmount)} and ${formatCurrency(plan.maxAmount)}.`
@@ -90,9 +94,21 @@ function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  disabled={kycBlocked}
                 />
                 {error ? (
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-sm text-destructive">
+                    {error}
+                    {kycBlocked && (
+                      <>
+                        {" "}
+                        <Link href="/dashboard/kyc" className="underline">
+                          Complete KYC
+                        </Link>
+                        .
+                      </>
+                    )}
+                  </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Available balance: {formatCurrency(available)}
@@ -126,6 +142,8 @@ function InvestDialog({ plan, onClose }: { plan: Plan; onClose: () => void }) {
 }
 
 export default function InvestPage() {
+  const sessionToken = useSessionToken();
+  const user = useQuery(api.users.currentUser, { sessionToken });
   const plans = useQuery(api.investmentPlans.listActive);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
@@ -141,6 +159,9 @@ export default function InvestPage() {
             <CardHeader>
               <CardTitle>{plan.name}</CardTitle>
               <CardDescription>{plan.description}</CardDescription>
+              {plan.requiresKyc && user && user.kycStatus !== "approved" && (
+                <p className="text-xs font-medium text-warning">Requires KYC verification</p>
+              )}
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-2 text-sm">
               <div className="flex justify-between">

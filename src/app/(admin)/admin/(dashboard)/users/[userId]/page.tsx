@@ -27,9 +27,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { passwordSchema } from "@/lib/validation/auth";
 
 const CAN_SUSPEND: string[] = ["super", "compliance"];
 const CAN_ADJUST_BALANCE: string[] = ["super", "finance"];
+const CAN_RESET_PASSWORD: string[] = ["super", "compliance"];
 
 function SuspendDialog({ userId, currentStatus }: { userId: Id<"users">; currentStatus: string }) {
   const sessionToken = useSessionToken();
@@ -204,6 +206,93 @@ function AdjustBalanceDialog({
   );
 }
 
+function ResetPasswordDialog({ userId }: { userId: Id<"users"> }) {
+  const sessionToken = useSessionToken();
+  const resetPassword = useMutation(api.admin.users.resetPassword);
+  const [open, setOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const parsed = passwordSchema.safeParse(newPassword);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await resetPassword({ sessionToken, userId, newPassword });
+      toast.success("Password reset. All of this user's sessions have been signed out.");
+      setOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      toast.error(getConvexErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setNewPassword("");
+          setConfirmPassword("");
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline">Reset Password</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset user password</DialogTitle>
+          <DialogDescription>
+            Sets a new password for this account and signs the user out everywhere. This action is audit-logged. The
+            user is not notified — share the new password with them yourself.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="reset-new-password">New password</Label>
+            <Input
+              id="reset-new-password"
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="reset-confirm-password">Confirm password</Label>
+            <Input
+              id="reset-confirm-password"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? <Loader2Icon className="size-4 animate-spin" /> : "Reset Password"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminUserDetailPage() {
   const params = useParams<{ userId: string }>();
   const sessionToken = useSessionToken();
@@ -235,7 +324,149 @@ export default function AdminUserDetailPage() {
         {admin && CAN_ADJUST_BALANCE.includes(admin.role) && (
           <AdjustBalanceDialog userId={userId} balance={detail.balance} />
         )}
+        {admin && CAN_RESET_PASSWORD.includes(admin.role) && <ResetPasswordDialog userId={userId} />}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <dt className="text-xs text-muted-foreground">Full name</dt>
+              <dd className="text-sm font-medium">
+                {detail.user.firstName} {detail.user.lastName}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Email</dt>
+              <dd className="text-sm font-medium">
+                {detail.user.email} {detail.user.emailVerified ? "(verified)" : "(unverified)"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Phone</dt>
+              <dd className="text-sm font-medium">{detail.user.phone ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Country</dt>
+              <dd className="text-sm font-medium">{detail.user.country ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Account status</dt>
+              <dd className="text-sm font-medium">
+                <StatusBadge status={detail.user.status} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">KYC status</dt>
+              <dd className="text-sm font-medium">
+                <StatusBadge status={detail.user.kycStatus} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Referral code</dt>
+              <dd className="text-sm font-medium">{detail.user.referralCode}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Referred by</dt>
+              <dd className="text-sm font-medium">
+                {detail.referredByUser
+                  ? `${detail.referredByUser.firstName} ${detail.referredByUser.lastName} (${detail.referredByUser.email})`
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Joined</dt>
+              <dd className="text-sm font-medium">{formatDate(detail.user.createdAt)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">User ID</dt>
+              <dd className="font-mono text-sm font-medium">{detail.user._id}</dd>
+            </div>
+          </dl>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>KYC Application</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!detail.kycApplication ? (
+            <p className="text-sm text-muted-foreground">No KYC application submitted.</p>
+          ) : (
+            <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <dt className="text-xs text-muted-foreground">Status</dt>
+                <dd className="text-sm font-medium">
+                  <StatusBadge status={detail.kycApplication.status} />
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Full legal name</dt>
+                <dd className="text-sm font-medium">{detail.kycApplication.fullName}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Date of birth</dt>
+                <dd className="text-sm font-medium">{detail.kycApplication.dateOfBirth}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Address</dt>
+                <dd className="text-sm font-medium">{detail.kycApplication.address}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Document type</dt>
+                <dd className="text-sm font-medium">{formatLabel(detail.kycApplication.documentType)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Submitted</dt>
+                <dd className="text-sm font-medium">{formatDate(detail.kycApplication.submittedAt)}</dd>
+              </div>
+              {detail.kycApplication.reviewedAt && (
+                <div>
+                  <dt className="text-xs text-muted-foreground">Reviewed</dt>
+                  <dd className="text-sm font-medium">
+                    {formatDate(detail.kycApplication.reviewedAt)}
+                    {detail.kycApplication.reviewerName ? ` by ${detail.kycApplication.reviewerName}` : ""}
+                  </dd>
+                </div>
+              )}
+              {detail.kycApplication.reviewNote && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <dt className="text-xs text-muted-foreground">Review note</dt>
+                  <dd className="text-sm font-medium">{detail.kycApplication.reviewNote}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-xs text-muted-foreground">Identity document</dt>
+                <dd className="text-sm font-medium">
+                  {detail.kycApplication.documentUrl ? (
+                    <a href={detail.kycApplication.documentUrl} target="_blank" rel="noreferrer" className="underline">
+                      View document
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Selfie</dt>
+                <dd className="text-sm font-medium">
+                  {detail.kycApplication.selfieUrl ? (
+                    <a href={detail.kycApplication.selfieUrl} target="_blank" rel="noreferrer" className="underline">
+                      View selfie
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </dd>
+              </div>
+            </dl>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
@@ -322,6 +553,24 @@ export default function AdminUserDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Referral Earnings ({detail.referralEarnings.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
+          {detail.referralEarnings.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No referral earnings.</p>
+          ) : (
+            detail.referralEarnings.map((r) => (
+              <div key={r._id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                <span>{formatDate(r.createdAt)}</span>
+                <span className="font-medium">{formatCurrency(r.amount)}</span>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

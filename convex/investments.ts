@@ -3,7 +3,7 @@ import { mutation, query, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCurrentUser } from "./lib/auth";
 import { writeTransaction } from "./lib/ledger";
-import { returnPrincipalToAvailable } from "./lib/investments";
+import { returnPrincipalToAvailable, getLowestActivePlanMinAmount, planRequiresKyc } from "./lib/investments";
 import { DAY_MS, WEEK_MS, dateKey } from "./lib/time";
 import { notifyAdminsByRole } from "./lib/notify";
 import type { Doc } from "./_generated/dataModel";
@@ -23,6 +23,12 @@ export const invest = mutation({
     if (!plan || plan.status !== "active") {
       throw new ConvexError("This plan is not currently available.");
     }
+
+    const lowestActiveMinAmount = await getLowestActivePlanMinAmount(ctx);
+    if (planRequiresKyc(plan, lowestActiveMinAmount) && user.kycStatus !== "approved") {
+      throw new ConvexError("Complete KYC verification before investing in this plan.");
+    }
+
     if (!Number.isFinite(args.amount) || args.amount < plan.minAmount || args.amount > plan.maxAmount) {
       throw new ConvexError(
         `Enter an amount between $${plan.minAmount.toLocaleString()} and $${plan.maxAmount.toLocaleString()}.`

@@ -6,6 +6,7 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 import { convexTestModules } from "../test.setup";
 import { createAdmin, createVerifiedUser } from "../lib/testHelpers";
+import { verifyPassword } from "../lib/password";
 
 describe("admin/users.list", () => {
   it("filters by search term across name and email", async () => {
@@ -46,6 +47,42 @@ describe("admin/users.detail", () => {
     expect(detail.user._id).toBe(user._id);
     expect(detail.balance?.available).toBe(1000);
     expect(detail.deposits).toHaveLength(1);
+  });
+
+  it("never returns the user's passwordHash", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { sessionToken } = await createAdmin(t);
+    const { user } = await createVerifiedUser(t);
+
+    const detail = await t.query(api.admin.users.detail, { sessionToken, userId: user._id });
+    expect(detail.user).not.toHaveProperty("passwordHash");
+  });
+
+  it("resolves the referring user and enriches the KYC application", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { sessionToken } = await createAdmin(t);
+    const { user: referrer } = await createVerifiedUser(t, { firstName: "Ada", lastName: "Lovelace" });
+    const { user } = await createVerifiedUser(t);
+    await t.run((ctx) => ctx.db.patch(user._id, { referredBy: referrer._id }));
+
+    const documentFileId = await t.run((ctx) => ctx.storage.store(new Blob(["fake document"], { type: "application/pdf" })));
+    await t.run((ctx) =>
+      ctx.db.insert("kycApplications", {
+        userId: user._id,
+        status: "pending",
+        fullName: "Jane Doe",
+        dateOfBirth: "1990-01-01",
+        address: "1 Main St",
+        documentType: "passport",
+        documentFileId,
+        submittedAt: Date.now(),
+      })
+    );
+
+    const detail = await t.query(api.admin.users.detail, { sessionToken, userId: user._id });
+    expect(detail.referredByUser).toMatchObject({ firstName: "Ada", lastName: "Lovelace" });
+    expect(detail.kycApplication).toMatchObject({ fullName: "Jane Doe" });
+    expect(detail.kycApplication?.documentUrl).toBeTruthy();
   });
 });
 
@@ -159,6 +196,69 @@ describe("admin/users.adjustBalance", () => {
         amount: 50,
         reason: "test",
       })
+    ).rejects.toThrow(ConvexError);
+  });
+});
+
+describe("admin/users.resetPassword", () => {
+  it("sets a new password, signs the user out everywhere, and writes an audit log entry", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { admin, sessionToken } = await createAdmin(t, { role: "super" });
+    const { user, sessionToken: userSessionToken } = await createVerifiedUser(t);
+
+    const result = await t.mutation(api.admin.users.resetPassword, {
+      sessionToken,
+      userId: user._id,
+      newPassword: "BrandNewPassword1",
+    });
+    expect(result).toEqual({ ok: true });
+
+    const updated = await t.run((ctx) => ctx.db.get(user._id));
+    expect(await verifyPassword("BrandNewPassword1", updated!.passwordHash)).toBe(true);
+
+    await expect(t.query(api.users.currentUser, { sessionToken: userSessionToken })).rejects.toThrow(ConvexError);
+
+    const logs = await t.run((ctx) => ctx.db.query("auditLogs").collect());
+    expect(logs).toMatchObject([{ adminId: admin._id, action: "user_password_reset", targetType: "user" }]);
+  });
+
+  it("does not notify the user", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { sessionToken } = await createAdmin(t, { role: "super" });
+    const { user } = await createVerifiedUser(t);
+
+    await t.mutation(api.admin.users.resetPassword, {
+      sessionToken,
+      userId: user._id,
+      newPassword: "BrandNewPassword1",
+    });
+
+    const notifications = await t.run((ctx) =>
+      ctx.db.query("notifications").withIndex("by_user", (q) => q.eq("userId", user._id)).collect()
+    );
+    expect(notifications).toHaveLength(0);
+
+    const scheduled = await t.run((ctx) => ctx.db.system.query("_scheduled_functions").collect());
+    expect(scheduled).toHaveLength(0);
+  });
+
+  it("rejects a password that fails the strength requirement", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { sessionToken } = await createAdmin(t, { role: "super" });
+    const { user } = await createVerifiedUser(t);
+
+    await expect(
+      t.mutation(api.admin.users.resetPassword, { sessionToken, userId: user._id, newPassword: "short" })
+    ).rejects.toThrow(ConvexError);
+  });
+
+  it("rejects a support-role admin", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { sessionToken } = await createAdmin(t, { role: "support" });
+    const { user } = await createVerifiedUser(t);
+
+    await expect(
+      t.mutation(api.admin.users.resetPassword, { sessionToken, userId: user._id, newPassword: "BrandNewPassword1" })
     ).rejects.toThrow(ConvexError);
   });
 });

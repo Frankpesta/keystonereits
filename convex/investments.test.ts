@@ -10,7 +10,7 @@ import type { Id } from "./_generated/dataModel";
 
 async function seedPlan(
   t: ReturnType<typeof convexTest>,
-  overrides: Partial<{ minAmount: number; maxAmount: number; durationDays: number; status: string }> = {}
+  overrides: Partial<{ name: string; minAmount: number; maxAmount: number; durationDays: number; status: string }> = {}
 ): Promise<Id<"investmentPlans">> {
   const adminId = await t.run((ctx) =>
     ctx.db.insert("admins", {
@@ -24,7 +24,7 @@ async function seedPlan(
   );
   return await t.run((ctx) =>
     ctx.db.insert("investmentPlans", {
-      name: "Foundation",
+      name: overrides.name ?? "Foundation",
       description: "desc",
       minAmount: overrides.minAmount ?? 200,
       maxAmount: overrides.maxAmount ?? 10_000,
@@ -165,5 +165,38 @@ describe("investments.invest", () => {
       ctx.db.query("notifications").withIndex("by_admin", (q) => q.eq("adminId", supportAdmin._id)).collect()
     );
     expect(supportAdminNotifications).toHaveLength(0);
+  });
+
+  describe("KYC gating", () => {
+    it("allows investing in the lowest-minAmount active plan without KYC", async () => {
+      const t = convexTest(schema, convexTestModules);
+      const lowestPlanId = await seedPlan(t, { name: "Foundation", minAmount: 200, maxAmount: 9_999 });
+      await seedPlan(t, { name: "Growth", minAmount: 10_000, maxAmount: 49_999 });
+      const { sessionToken } = await createVerifiedUser(t, { kycStatus: "not_started", available: 5000 });
+
+      const result = await t.mutation(api.investments.invest, { sessionToken, planId: lowestPlanId, amount: 1000 });
+      expect(result.ok).toBe(true);
+    });
+
+    it("rejects investing in a higher-tier plan without approved KYC", async () => {
+      const t = convexTest(schema, convexTestModules);
+      await seedPlan(t, { name: "Foundation", minAmount: 200, maxAmount: 9_999 });
+      const growthPlanId = await seedPlan(t, { name: "Growth", minAmount: 10_000, maxAmount: 49_999 });
+      const { sessionToken } = await createVerifiedUser(t, { kycStatus: "not_started", available: 50_000 });
+
+      await expect(
+        t.mutation(api.investments.invest, { sessionToken, planId: growthPlanId, amount: 15_000 })
+      ).rejects.toThrow(ConvexError);
+    });
+
+    it("allows investing in a higher-tier plan once KYC is approved", async () => {
+      const t = convexTest(schema, convexTestModules);
+      await seedPlan(t, { name: "Foundation", minAmount: 200, maxAmount: 9_999 });
+      const growthPlanId = await seedPlan(t, { name: "Growth", minAmount: 10_000, maxAmount: 49_999 });
+      const { sessionToken } = await createVerifiedUser(t, { kycStatus: "approved", available: 50_000 });
+
+      const result = await t.mutation(api.investments.invest, { sessionToken, planId: growthPlanId, amount: 15_000 });
+      expect(result.ok).toBe(true);
+    });
   });
 });

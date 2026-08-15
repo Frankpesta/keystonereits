@@ -1,4 +1,5 @@
 import { query } from "./_generated/server";
+import { planRequiresKyc } from "./lib/investments";
 
 /** Public — powers the marketing site's plan cards. No auth: this is intentionally readable pre-login. */
 export const listActive = query({
@@ -8,6 +9,8 @@ export const listActive = query({
       .query("investmentPlans")
       .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
-    return plans.sort((a, b) => a.minAmount - b.minAmount);
+    const sorted = plans.sort((a, b) => a.minAmount - b.minAmount);
+    const lowestActiveMinAmount = sorted[0]?.minAmount ?? null;
+    return sorted.map((plan) => ({ ...plan, requiresKyc: planRequiresKyc(plan, lowestActiveMinAmount) }));
   },
 });

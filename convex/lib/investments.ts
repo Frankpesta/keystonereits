@@ -1,6 +1,31 @@
-import type { MutationCtx } from "../_generated/server";
+import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc } from "../_generated/dataModel";
 import { writeTransaction } from "./ledger";
+
+/**
+ * KYC is only required above the entry-level plan: a new user can register
+ * and invest in the cheapest active plan immediately, but must have an
+ * approved KYC application to invest in anything else. There's no explicit
+ * tier/rank field on `investmentPlans` (see schema.ts) — the "lowest" plan is
+ * whichever active plan has the smallest `minAmount`, the same convention
+ * `investmentPlans.listActive` already sorts by.
+ */
+export async function getLowestActivePlanMinAmount(ctx: QueryCtx | MutationCtx): Promise<number | null> {
+  const activePlans = await ctx.db
+    .query("investmentPlans")
+    .withIndex("by_status", (q) => q.eq("status", "active"))
+    .collect();
+  if (activePlans.length === 0) return null;
+  return Math.min(...activePlans.map((p) => p.minAmount));
+}
+
+export function planRequiresKyc(
+  plan: Pick<Doc<"investmentPlans">, "minAmount">,
+  lowestActiveMinAmount: number | null
+): boolean {
+  if (lowestActiveMinAmount === null) return true;
+  return plan.minAmount > lowestActiveMinAmount;
+}
 
 /**
  * Principal-return policy (resolves the // TODO originally left in

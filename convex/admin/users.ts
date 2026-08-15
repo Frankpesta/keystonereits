@@ -3,6 +3,9 @@ import { mutation, query } from "../_generated/server";
 import { getCurrentAdmin, requireRole } from "../lib/auth";
 import { logAdminAction } from "../lib/audit";
 import { writeTransaction } from "../lib/ledger";
+import { hashPassword } from "../lib/password";
+import { invalidateAllSessions } from "../lib/sessions";
+import { passwordSchema } from "../../src/lib/validation/auth";
 
 const USER_STATUS = v.union(v.literal("active"), v.literal("suspended"), v.literal("restricted"));
 const BALANCE_TYPE = v.union(v.literal("available"), v.literal("invested"), v.literal("profit"));
@@ -38,10 +41,27 @@ export const detail = query({
       .query("balances")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
-    const kycApplication = await ctx.db
+    const kycApplicationRaw = await ctx.db
       .query("kycApplications")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
+
+    const [referredByUser, kycApplication] = await Promise.all([
+      user.referredBy ? ctx.db.get(user.referredBy) : null,
+      kycApplicationRaw
+        ? (async () => {
+            const reviewer = kycApplicationRaw.reviewedBy ? await ctx.db.get(kycApplicationRaw.reviewedBy) : null;
+            return {
+              ...kycApplicationRaw,
+              documentUrl: await ctx.storage.getUrl(kycApplicationRaw.documentFileId),
+              selfieUrl: kycApplicationRaw.selfieFileId
+                ? await ctx.storage.getUrl(kycApplicationRaw.selfieFileId)
+                : null,
+              reviewerName: reviewer ? reviewer.name : null,
+            };
+          })()
+        : Promise.resolve(null),
+    ]);
 
     const [investmentsRaw, deposits, withdrawals, transactions, referralEarnings, auditEntries] = await Promise.all([
       ctx.db.query("investments").withIndex("by_user", (q) => q.eq("userId", args.userId)).collect(),
@@ -56,8 +76,14 @@ export const detail = query({
       investmentsRaw.map(async (inv) => ({ ...inv, plan: await ctx.db.get(inv.planId) }))
     );
 
+    const { passwordHash, ...userWithoutPasswordHash } = user;
+    void passwordHash;
+
     return {
-      user,
+      user: userWithoutPasswordHash,
+      referredByUser: referredByUser
+        ? { firstName: referredByUser.firstName, lastName: referredByUser.lastName, email: referredByUser.email }
+        : null,
       balance,
       kycApplication,
       investments,
@@ -155,6 +181,34 @@ export const adjustBalance = mutation({
       amount: args.amount,
       before: { [args.balanceType]: before },
       after: { [args.balanceType]: after, reason },
+    });
+
+    return { ok: true as const };
+  },
+});
+
+export const resetPassword = mutation({
+  args: { sessionToken: v.string(), userId: v.id("users"), newPassword: v.string() },
+  handler: async (ctx, args) => {
+    const admin = await getCurrentAdmin(ctx, args.sessionToken);
+    requireRole(admin, ["super", "compliance"]);
+
+    const passwordParsed = passwordSchema.safeParse(args.newPassword);
+    if (!passwordParsed.success) {
+      throw new ConvexError(passwordParsed.error.issues[0]?.message ?? "Invalid password.");
+    }
+
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new ConvexError("User not found.");
+
+    await ctx.db.patch(args.userId, { passwordHash: await hashPassword(passwordParsed.data) });
+    await invalidateAllSessions(ctx, user._id);
+
+    await logAdminAction(ctx, {
+      adminId: admin._id,
+      action: "user_password_reset",
+      targetType: "user",
+      targetId: args.userId,
     });
 
     return { ok: true as const };
