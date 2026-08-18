@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -12,6 +12,7 @@ import { useSessionToken } from "@/lib/auth/session-context";
 import { getConvexErrorMessage } from "@/lib/convex-error";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { StatusBadge, formatLabel } from "@/components/shared/status-badge";
+import { impersonateUserAction } from "@/app/(admin)/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,6 +33,96 @@ import { passwordSchema } from "@/lib/validation/auth";
 const CAN_SUSPEND: string[] = ["super", "compliance"];
 const CAN_ADJUST_BALANCE: string[] = ["super", "finance"];
 const CAN_RESET_PASSWORD: string[] = ["super", "compliance"];
+const CAN_DELETE_OR_IMPERSONATE: string[] = ["super"];
+
+function ImpersonateForm({ userId }: { userId: Id<"users"> }) {
+  return (
+    <form action={impersonateUserAction.bind(null, userId)} target="_blank">
+      <Button type="submit" variant="outline">
+        Login as User
+      </Button>
+    </form>
+  );
+}
+
+function DeleteUserDialog({ userId, email }: { userId: Id<"users">; email: string }) {
+  const router = useRouter();
+  const sessionToken = useSessionToken();
+  const deleteUser = useMutation(api.admin.users.deleteUser);
+  const [open, setOpen] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!reason.trim()) {
+      toast.error("Enter a reason.");
+      return;
+    }
+    if (confirmEmail.trim().toLowerCase() !== email.toLowerCase()) {
+      toast.error("Type the account's email exactly to confirm.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await deleteUser({ sessionToken, userId, confirmEmail: confirmEmail.trim(), reason: reason.trim() });
+      toast.success("User permanently deleted.");
+      router.push("/admin/users");
+    } catch (err) {
+      toast.error(getConvexErrorMessage(err));
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setConfirmEmail("");
+          setReason("");
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="destructive">Delete User</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Permanently delete this account</DialogTitle>
+          <DialogDescription>
+            This removes the user and every record tied to them — profile, KYC, balances, investments, deposits,
+            withdrawals, transactions, support tickets, and notifications. This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="delete-confirm-email">
+              Type <span className="font-mono">{email}</span> to confirm
+            </Label>
+            <Input
+              id="delete-confirm-email"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="delete-reason">Reason</Label>
+            <Textarea id="delete-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button type="submit" variant="destructive" disabled={submitting}>
+              {submitting ? <Loader2Icon className="size-4 animate-spin" /> : "Permanently Delete"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function SuspendDialog({ userId, currentStatus }: { userId: Id<"users">; currentStatus: string }) {
   const sessionToken = useSessionToken();
@@ -325,6 +416,10 @@ export default function AdminUserDetailPage() {
           <AdjustBalanceDialog userId={userId} balance={detail.balance} />
         )}
         {admin && CAN_RESET_PASSWORD.includes(admin.role) && <ResetPasswordDialog userId={userId} />}
+        {admin && CAN_DELETE_OR_IMPERSONATE.includes(admin.role) && <ImpersonateForm userId={userId} />}
+        {admin && CAN_DELETE_OR_IMPERSONATE.includes(admin.role) && (
+          <DeleteUserDialog userId={userId} email={detail.user.email} />
+        )}
       </div>
 
       <Card>
