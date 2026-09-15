@@ -94,6 +94,7 @@ async function transition(
       type: `withdrawal_${args.toStatus}`,
       title: copy.title,
       body,
+      relatedId: args.withdrawalId,
       read: false,
       createdAt: now,
     });

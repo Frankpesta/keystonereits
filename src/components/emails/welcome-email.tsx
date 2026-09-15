@@ -19,8 +19,11 @@ const STEPS = [
 
 export function WelcomeEmail({ firstName }: { firstName: string }) {
   return (
-    <EmailLayout previewText="Your Keystone REIT account is ready — here's how to get started" heading={`Welcome, ${firstName}`}>
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout
+      previewText="Your Keystone REIT account is ready — here's how to get started"
+      heading={`Welcome, ${firstName}`}
+      greetingName={firstName}
+    >
       <Text style={{ margin: "0 0 16px" }}>
         Your Keystone REIT account is verified and ready. You&apos;re now part of a professionally managed way to
         participate in real estate — through serviced apartments and short-term rental properties — without the

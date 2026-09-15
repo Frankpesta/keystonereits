@@ -14,8 +14,7 @@ export function InvestmentCompletedEmail({
   accruedProfit: number;
 }) {
   return (
-    <EmailLayout previewText={`Your ${planName} investment has matured`} heading="Investment matured">
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout previewText={`Your ${planName} investment has matured`} heading="Investment matured" greetingName={firstName}>
       <Text style={{ margin: "0 0 16px" }}>
         Your <strong>{planName}</strong> investment has reached maturity. Your principal of{" "}
         <strong>${amountUsd.toLocaleString()}</strong> has been returned to your available balance, and your total

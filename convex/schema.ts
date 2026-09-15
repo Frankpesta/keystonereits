@@ -241,6 +241,7 @@ export default defineSchema({
     type: v.string(),
     title: v.string(),
     body: v.string(),
+    relatedId: v.optional(v.string()),
     read: v.boolean(),
     createdAt: v.number(),
   })

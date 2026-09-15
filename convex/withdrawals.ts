@@ -66,6 +66,7 @@ export const request = mutation({
       type: "withdrawal_pending",
       title: "Withdrawal Requested",
       body: `Your withdrawal request for $${args.amountUsd.toLocaleString()} has been received and is pending review.`,
+      relatedId: withdrawalId,
       read: false,
       createdAt: Date.now(),
     });
@@ -74,6 +75,7 @@ export const request = mutation({
       type: "admin_withdrawal_requested",
       title: "New Withdrawal Request",
       body: `${user.firstName} ${user.lastName} requested a $${args.amountUsd.toLocaleString()} withdrawal.`,
+      relatedId: withdrawalId,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendWithdrawalStatusEmail, {
       to: user.email,

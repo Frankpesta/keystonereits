@@ -110,6 +110,7 @@ export const signup = mutation({
       code,
       purpose: "signup_verify",
       expiresInMinutes: 10,
+      firstName,
       userId,
     });
 
@@ -135,6 +136,7 @@ export const resendSignupOtp = mutation({
       code,
       purpose: "signup_verify",
       expiresInMinutes: 10,
+      firstName: user.firstName,
       userId: user._id,
     });
     return { email };
@@ -213,6 +215,7 @@ export const login = mutation({
       code,
       purpose: "login_2fa",
       expiresInMinutes: 10,
+      firstName: user.firstName,
       userId: user._id,
     });
 
@@ -236,6 +239,7 @@ export const resendLoginOtp = mutation({
       code,
       purpose: "login_2fa",
       expiresInMinutes: 10,
+      firstName: user.firstName,
       userId: user._id,
     });
     return { email };
@@ -307,6 +311,7 @@ export const requestPasswordReset = mutation({
         code,
         purpose: "password_reset",
         expiresInMinutes: 10,
+        firstName: user.firstName,
         userId: user._id,
       });
     }
@@ -384,6 +389,7 @@ export const adminLogin = mutation({
       code,
       purpose: "login_2fa",
       expiresInMinutes: 10,
+      firstName: admin.name,
     });
 
     return { ok: true as const, email };
@@ -406,6 +412,7 @@ export const adminResendLoginOtp = mutation({
       code,
       purpose: "login_2fa",
       expiresInMinutes: 10,
+      firstName: admin.name,
     });
     return { email };
   },
@@ -473,6 +480,7 @@ export const adminRequestPasswordReset = mutation({
         code,
         purpose: "admin_password_reset",
         expiresInMinutes: 10,
+        firstName: admin.name,
       });
     }
     return { email };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -131,8 +132,22 @@ function WithdrawalDrawer({ withdrawalId, onClose }: { withdrawalId: Id<"withdra
 
 export default function AdminWithdrawalsPage() {
   const sessionToken = useSessionToken();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const withdrawalIdParam = searchParams.get("withdrawalId") as Id<"withdrawals"> | null;
   const [status, setStatus] = useState<string>("all");
-  const [selectedId, setSelectedId] = useState<Id<"withdrawals"> | null>(null);
+  const [selectedId, setSelectedId] = useState<Id<"withdrawals"> | null>(withdrawalIdParam);
+  const [lastWithdrawalIdParam, setLastWithdrawalIdParam] = useState(withdrawalIdParam);
+
+  if (withdrawalIdParam !== lastWithdrawalIdParam) {
+    setLastWithdrawalIdParam(withdrawalIdParam);
+    if (withdrawalIdParam) setSelectedId(withdrawalIdParam);
+  }
+
+  function closeDrawer() {
+    setSelectedId(null);
+    if (withdrawalIdParam) router.replace("/admin/withdrawals");
+  }
 
   const withdrawals = useQuery(api.admin.withdrawals.list, {
     sessionToken,
@@ -221,8 +236,8 @@ export default function AdminWithdrawalsPage() {
         </CardContent>
       </Card>
 
-      <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        {selectedId && <WithdrawalDrawer withdrawalId={selectedId} onClose={() => setSelectedId(null)} />}
+      <Sheet open={!!selectedId} onOpenChange={(open) => !open && closeDrawer()}>
+        {selectedId && <WithdrawalDrawer withdrawalId={selectedId} onClose={closeDrawer} />}
       </Sheet>
     </div>
   );

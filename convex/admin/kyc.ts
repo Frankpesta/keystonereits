@@ -86,6 +86,7 @@ async function reviewApplication(
     type: `kyc_${args.status}`,
     title: args.notification.title,
     body: args.notification.body,
+    relatedId: args.applicationId,
     read: false,
     createdAt: now,
   });

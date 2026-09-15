@@ -76,6 +76,7 @@ export const invest = mutation({
       type: "investment_created",
       title: "Investment Confirmed",
       body: `Your investment of $${args.amount.toLocaleString()} in the ${plan.name} plan is now active.`,
+      relatedId: investmentId,
       read: false,
       createdAt: now,
     });
@@ -84,6 +85,7 @@ export const invest = mutation({
       type: "admin_investment_created",
       title: "New Investment",
       body: `${user.firstName} ${user.lastName} invested $${args.amount.toLocaleString()} in the ${plan.name} plan.`,
+      relatedId: investmentId,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendInvestmentCreatedEmail, {
       to: user.email,
@@ -224,6 +226,7 @@ export const processMaturities = internalMutation({
           type: "investment_completed",
           title: "Investment Matured",
           body: `Your ${plan?.name ?? "investment"} has matured. Your principal of $${investment.amount.toLocaleString()} has been returned to your available balance.`,
+          relatedId: investment._id,
           read: false,
           createdAt: now,
         });

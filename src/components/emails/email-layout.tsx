@@ -29,11 +29,14 @@ const SERIF_FONT = 'Georgia,"Times New Roman",serif';
 export function EmailLayout({
   previewText,
   heading,
+  greetingName,
   children,
   isBroadcast = false,
 }: {
   previewText: string;
   heading: string;
+  /** Renders a "Hi {greetingName}," line under the heading. Omit for emails with no known recipient name. */
+  greetingName?: string;
   children: ReactNode;
   isBroadcast?: boolean;
 }) {
@@ -75,7 +78,10 @@ export function EmailLayout({
             >
               {heading}
             </Heading>
-            <div style={{ fontSize: 14, lineHeight: "22px", color: EMAIL_COLORS.foreground }}>{children}</div>
+            <div style={{ fontSize: 14, lineHeight: "22px", color: EMAIL_COLORS.foreground }}>
+              {greetingName && <Text style={{ margin: "0 0 8px" }}>Hi {greetingName},</Text>}
+              {children}
+            </div>
           </Section>
           <Hr style={{ borderColor: EMAIL_COLORS.border, margin: 0 }} />
           <Section style={{ padding: "24px 32px" }}>

@@ -84,12 +84,26 @@ const OTP_PURPOSE = v.union(
 );
 
 export const sendOtpEmail = internalAction({
-  args: { to: v.string(), code: v.string(), purpose: OTP_PURPOSE, expiresInMinutes: v.number(), userId: v.optional(v.id("users")) },
+  args: {
+    to: v.string(),
+    code: v.string(),
+    purpose: OTP_PURPOSE,
+    expiresInMinutes: v.number(),
+    firstName: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+  },
   handler: async (ctx, args) => {
     await sendEmail(ctx, {
       to: args.to,
       subject: "Your Keystone REIT verification code",
-      react: <OtpCodeEmail code={args.code} purpose={args.purpose} expiresInMinutes={args.expiresInMinutes} />,
+      react: (
+        <OtpCodeEmail
+          code={args.code}
+          purpose={args.purpose}
+          expiresInMinutes={args.expiresInMinutes}
+          firstName={args.firstName}
+        />
+      ),
       userId: args.userId,
     });
   },
@@ -241,12 +255,19 @@ export const sendSupportTicketReplyEmail = internalAction({
 });
 
 export const sendAdminBroadcastEmail = internalAction({
-  args: { to: v.string(), subject: v.string(), body: v.string(), userId: v.optional(v.id("users")), campaignId: v.optional(v.string()) },
+  args: {
+    to: v.string(),
+    subject: v.string(),
+    body: v.string(),
+    firstName: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+    campaignId: v.optional(v.string()),
+  },
   handler: async (ctx, args) => {
     await sendEmail(ctx, {
       to: args.to,
       subject: args.subject,
-      react: <AdminBroadcastEmail subject={args.subject} body={args.body} />,
+      react: <AdminBroadcastEmail subject={args.subject} body={args.body} firstName={args.firstName} />,
       userId: args.userId,
       campaignId: args.campaignId,
     });

@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./lib/auth";
 import { notifyAdminsByRole } from "./lib/notify";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 
 // Statuses from which a (re)submission is allowed. "pending"/"under_review"
 // are already in an admin's queue; "approved" never needs resubmission.
@@ -55,10 +55,12 @@ export const submit = mutation({
       reviewedAt: undefined,
     };
 
+    let applicationId: Id<"kycApplications">;
     if (existing) {
       await ctx.db.patch(existing._id, fields);
+      applicationId = existing._id;
     } else {
-      await ctx.db.insert("kycApplications", { userId: user._id, ...fields });
+      applicationId = await ctx.db.insert("kycApplications", { userId: user._id, ...fields });
     }
     await ctx.db.patch(user._id, { kycStatus: "pending" });
     await notifyAdminsByRole(ctx, {
@@ -66,6 +68,7 @@ export const submit = mutation({
       type: "admin_kyc_submitted",
       title: "New KYC Submission",
       body: `${user.firstName} ${user.lastName} submitted a KYC application for review.`,
+      relatedId: applicationId,
     });
 
     return { ok: true as const };

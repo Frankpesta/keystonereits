@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
@@ -141,9 +142,23 @@ function DepositDrawer({ depositId, onClose }: { depositId: Id<"deposits">; onCl
 
 export default function AdminDepositsPage() {
   const sessionToken = useSessionToken();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const depositIdParam = searchParams.get("depositId") as Id<"deposits"> | null;
   const [method, setMethod] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
-  const [selectedDepositId, setSelectedDepositId] = useState<Id<"deposits"> | null>(null);
+  const [selectedDepositId, setSelectedDepositId] = useState<Id<"deposits"> | null>(depositIdParam);
+  const [lastDepositIdParam, setLastDepositIdParam] = useState(depositIdParam);
+
+  if (depositIdParam !== lastDepositIdParam) {
+    setLastDepositIdParam(depositIdParam);
+    if (depositIdParam) setSelectedDepositId(depositIdParam);
+  }
+
+  function closeDrawer() {
+    setSelectedDepositId(null);
+    if (depositIdParam) router.replace("/admin/deposits");
+  }
 
   const deposits = useQuery(api.admin.deposits.list, {
     sessionToken,
@@ -231,8 +246,8 @@ export default function AdminDepositsPage() {
         </CardContent>
       </Card>
 
-      <Sheet open={!!selectedDepositId} onOpenChange={(open) => !open && setSelectedDepositId(null)}>
-        {selectedDepositId && <DepositDrawer depositId={selectedDepositId} onClose={() => setSelectedDepositId(null)} />}
+      <Sheet open={!!selectedDepositId} onOpenChange={(open) => !open && closeDrawer()}>
+        {selectedDepositId && <DepositDrawer depositId={selectedDepositId} onClose={closeDrawer} />}
       </Sheet>
     </div>
   );

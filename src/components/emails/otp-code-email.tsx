@@ -22,10 +22,20 @@ const COPY: Record<OtpPurpose, { heading: string; intro: string }> = {
   },
 };
 
-export function OtpCodeEmail({ code, purpose, expiresInMinutes }: { code: string; purpose: OtpPurpose; expiresInMinutes: number }) {
+export function OtpCodeEmail({
+  code,
+  purpose,
+  expiresInMinutes,
+  firstName,
+}: {
+  code: string;
+  purpose: OtpPurpose;
+  expiresInMinutes: number;
+  firstName?: string;
+}) {
   const { heading, intro } = COPY[purpose];
   return (
-    <EmailLayout previewText={`Your Keystone REIT code is ${code}`} heading={heading}>
+    <EmailLayout previewText={`Your Keystone REIT code is ${code}`} heading={heading} greetingName={firstName}>
       <Text style={{ margin: "0 0 16px" }}>{intro}</Text>
       <Text
         style={{
@@ -53,5 +63,5 @@ export function OtpCodeEmail({ code, purpose, expiresInMinutes }: { code: string
 
 /** Sample props for the react-email preview server (`npx react-email dev`). */
 export default function OtpCodeEmailPreview() {
-  return <OtpCodeEmail code="482913" purpose="login_2fa" expiresInMinutes={10} />;
+  return <OtpCodeEmail code="482913" purpose="login_2fa" expiresInMinutes={10} firstName="Jordan" />;
 }

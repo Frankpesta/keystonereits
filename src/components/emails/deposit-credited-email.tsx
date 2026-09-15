@@ -4,8 +4,7 @@ import { getAppUrl } from "./app-url";
 
 export function DepositCreditedEmail({ firstName, amountUsd }: { firstName: string; amountUsd: number }) {
   return (
-    <EmailLayout previewText="Your deposit has been credited" heading="Deposit credited">
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout previewText="Your deposit has been credited" heading="Deposit credited" greetingName={firstName}>
       <Text style={{ margin: "0 0 16px" }}>
         Your deposit of <strong>${amountUsd.toLocaleString()}</strong> has been verified and credited to your
         available balance.

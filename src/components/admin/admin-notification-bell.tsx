@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { useMutation, useQuery } from "convex/react";
 import { BellIcon } from "lucide-react";
 
 import { api } from "@/lib/convex-api";
+import type { Id } from "@/lib/convex-api";
 import { useSessionToken } from "@/lib/auth/session-context";
+import { adminNotificationHref } from "@/lib/notification-links";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +22,8 @@ import { cn } from "@/lib/utils";
 
 export function AdminNotificationBell() {
   const sessionToken = useSessionToken();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const unreadCount = useQuery(api.notifications.adminUnreadCount, { sessionToken });
   const notifications = useQuery(api.notifications.adminNotifications, { sessionToken });
   const markAllRead = useMutation(api.notifications.markAllAdminRead);
@@ -25,8 +31,15 @@ export function AdminNotificationBell() {
 
   const recent = notifications?.slice(0, 5) ?? [];
 
+  async function handleSelect(n: { _id: Id<"notifications">; read: boolean; type: string; relatedId?: string }) {
+    if (!n.read) await markRead({ sessionToken, notificationId: n._id });
+    setOpen(false);
+    const href = adminNotificationHref(n.type, n.relatedId);
+    if (href) router.push(href);
+  }
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -67,7 +80,7 @@ export function AdminNotificationBell() {
               <button
                 key={n._id}
                 type="button"
-                onClick={() => !n.read && markRead({ sessionToken, notificationId: n._id })}
+                onClick={() => handleSelect(n)}
                 className={cn(
                   "flex w-full flex-col gap-0.5 border-b px-3 py-2.5 text-left text-sm last:border-b-0 hover:bg-muted/60",
                   !n.read && "bg-primary/5"

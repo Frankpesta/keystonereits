@@ -97,6 +97,7 @@ export const reply = mutation({
       type: "support_reply",
       title: "New Reply on Your Ticket",
       body: `Support replied to "${ticket.subject}".`,
+      relatedId: args.ticketId,
       read: false,
       createdAt: now,
     });

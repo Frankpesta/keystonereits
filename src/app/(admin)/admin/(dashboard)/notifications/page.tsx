@@ -1,20 +1,30 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 
 import { api } from "@/lib/convex-api";
+import type { Id } from "@/lib/convex-api";
 import { useSessionToken } from "@/lib/auth/session-context";
 import { formatDate } from "@/lib/format";
+import { adminNotificationHref } from "@/lib/notification-links";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default function AdminNotificationsPage() {
   const sessionToken = useSessionToken();
+  const router = useRouter();
   const notifications = useQuery(api.notifications.adminNotifications, { sessionToken });
   const unreadCount = useQuery(api.notifications.adminUnreadCount, { sessionToken });
   const markRead = useMutation(api.notifications.markAdminRead);
   const markAllRead = useMutation(api.notifications.markAllAdminRead);
+
+  async function handleSelect(n: { _id: Id<"notifications">; read: boolean; type: string; relatedId?: string }) {
+    if (!n.read) await markRead({ sessionToken, notificationId: n._id });
+    const href = adminNotificationHref(n.type, n.relatedId);
+    if (href) router.push(href);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,7 +49,7 @@ export default function AdminNotificationsPage() {
               <button
                 key={n._id}
                 type="button"
-                onClick={() => !n.read && markRead({ sessionToken, notificationId: n._id })}
+                onClick={() => handleSelect(n)}
                 className={cn(
                   "flex items-start justify-between gap-3 rounded-lg border p-3 text-left text-sm hover:bg-muted/50",
                   !n.read && "bg-primary/5"

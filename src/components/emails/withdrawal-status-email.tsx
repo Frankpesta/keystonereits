@@ -44,8 +44,7 @@ export function WithdrawalStatusEmail({
   const amount = `$${amountUsd.toLocaleString()}`;
   const { heading, intro } = COPY[status];
   return (
-    <EmailLayout previewText={heading} heading={heading}>
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout previewText={heading} heading={heading} greetingName={firstName}>
       <Text style={{ margin: reason ? "0 0 16px" : 0 }}>{intro(amount)}</Text>
       {reason && (
         <Text

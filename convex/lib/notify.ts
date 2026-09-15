@@ -8,7 +8,7 @@ import type { Doc } from "../_generated/dataModel";
  */
 export async function notifyAdminsByRole(
   ctx: MutationCtx,
-  args: { roles: Doc<"admins">["role"][]; type: string; title: string; body: string }
+  args: { roles: Doc<"admins">["role"][]; type: string; title: string; body: string; relatedId?: string }
 ) {
   const admins = await ctx.db.query("admins").collect();
   const now = Date.now();
@@ -19,6 +19,7 @@ export async function notifyAdminsByRole(
       type: args.type,
       title: args.title,
       body: args.body,
+      relatedId: args.relatedId,
       read: false,
       createdAt: now,
     });

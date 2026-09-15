@@ -118,6 +118,7 @@ export const send = mutation({
         to: recipient.email,
         subject,
         body,
+        firstName: recipient.firstName,
         userId: recipient._id,
         campaignId,
       });

@@ -65,6 +65,7 @@ export const submitCrypto = mutation({
       type: "deposit_received",
       title: "Deposit Received",
       body: `Your $${args.amountUsd.toLocaleString()} crypto deposit was received and is pending verification.`,
+      relatedId: depositId,
       read: false,
       createdAt: Date.now(),
     });
@@ -73,6 +74,7 @@ export const submitCrypto = mutation({
       type: "admin_deposit_submitted",
       title: "New Deposit Submitted",
       body: `${user.firstName} ${user.lastName} submitted a $${args.amountUsd.toLocaleString()} crypto deposit for review.`,
+      relatedId: depositId,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendDepositReceivedEmail, {
       to: user.email,

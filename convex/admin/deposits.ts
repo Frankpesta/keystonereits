@@ -82,6 +82,7 @@ export const verifyAndCredit = mutation({
       type: "deposit_credited",
       title: "Deposit Credited",
       body: `Your $${deposit.amountUsd.toLocaleString()} deposit has been credited to your available balance.`,
+      relatedId: args.depositId,
       read: false,
       createdAt: now,
     });
@@ -128,6 +129,7 @@ export const reject = mutation({
       type: "deposit_rejected",
       title: "Deposit Rejected",
       body: reason,
+      relatedId: args.depositId,
       read: false,
       createdAt: now,
     });

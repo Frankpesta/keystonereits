@@ -104,6 +104,7 @@ async function applyOverride(
     type: `investment_${args.action}`,
     title: `Investment ${args.action === "pause" ? "Paused" : args.action === "end" ? "Ended" : "Restarted"}`,
     body: reasonToNotificationBody(args.action, args.reason),
+    relatedId: args.investmentId,
     read: false,
     createdAt: Date.now(),
   });

@@ -14,8 +14,7 @@ export function SupportTicketReplyEmail({
   replyUrl: string;
 }) {
   return (
-    <EmailLayout previewText={`New reply on: ${ticketSubject}`} heading="New reply on your ticket">
-      <Text style={{ margin: "0 0 8px" }}>Hi {recipientName},</Text>
+    <EmailLayout previewText={`New reply on: ${ticketSubject}`} heading="New reply on your ticket" greetingName={recipientName}>
       <Text style={{ margin: "0 0 16px" }}>
         There&apos;s a new reply on your support ticket <strong>&ldquo;{ticketSubject}&rdquo;</strong>:
       </Text>

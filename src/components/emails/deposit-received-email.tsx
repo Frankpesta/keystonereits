@@ -11,8 +11,7 @@ export function DepositReceivedEmail({
   method: "crypto" | "fiat";
 }) {
   return (
-    <EmailLayout previewText="We've received your deposit request" heading="Deposit received">
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout previewText="We've received your deposit request" heading="Deposit received" greetingName={firstName}>
       <Text style={{ margin: 0 }}>
         We&apos;ve received your {method === "crypto" ? "crypto" : "fiat"} deposit request for{" "}
         <strong>${amountUsd.toLocaleString()}</strong>. It&apos;s pending manual verification —

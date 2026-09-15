@@ -22,8 +22,7 @@ const COPY: Record<KycStatus, { heading: string; intro: string }> = {
 export function KycStatusEmail({ firstName, status, note }: { firstName: string; status: KycStatus; note?: string }) {
   const { heading, intro } = COPY[status];
   return (
-    <EmailLayout previewText={heading} heading={heading}>
-      <Text style={{ margin: "0 0 8px" }}>Hi {firstName},</Text>
+    <EmailLayout previewText={heading} heading={heading} greetingName={firstName}>
       <Text style={{ margin: "0 0 16px" }}>{intro}</Text>
       {note && (
         <Text

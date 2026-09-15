@@ -164,9 +164,10 @@ export const requestFiatDeposit = mutation({
     });
     await ctx.db.insert("notifications", {
       userId: user._id,
-      type: "deposit_received",
+      type: "deposit_received_fiat",
       title: "Deposit Received",
       body: `Your $${args.amountUsd.toLocaleString()} fiat deposit request was received — check your support ticket for bank details.`,
+      relatedId: ticketId,
       read: false,
       createdAt: now,
     });
@@ -175,6 +176,7 @@ export const requestFiatDeposit = mutation({
       type: "admin_deposit_submitted",
       title: "New Deposit Submitted",
       body: `${user.firstName} ${user.lastName} requested a $${args.amountUsd.toLocaleString()} fiat deposit.`,
+      relatedId: depositId,
     });
     await ctx.scheduler.runAfter(0, internal.emailActions.sendDepositReceivedEmail, {
       to: user.email,
