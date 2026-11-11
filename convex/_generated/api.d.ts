@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as accrualBackfill from "../accrualBackfill.js";
 import type * as admin_admins from "../admin/admins.js";
 import type * as admin_auditLogs from "../admin/auditLogs.js";
 import type * as admin_dashboard from "../admin/dashboard.js";
@@ -63,6 +64,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  accrualBackfill: typeof accrualBackfill;
   "admin/admins": typeof admin_admins;
   "admin/auditLogs": typeof admin_auditLogs;
   "admin/dashboard": typeof admin_dashboard;

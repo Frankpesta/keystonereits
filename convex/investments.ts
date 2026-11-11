@@ -10,6 +10,9 @@ import type { Doc } from "./_generated/dataModel";
 
 const INVESTMENT_NOTIFY_ROLES: Doc<"admins">["role"][] = ["super", "investment"];
 
+/** Minimum time between two accruals for one investment — see accrueWeeklyProfit. */
+const ACCRUAL_MIN_GAP_MS = WEEK_MS - DAY_MS;
+
 export const invest = mutation({
   args: {
     sessionToken: v.string(),
@@ -152,7 +155,10 @@ export const accrueWeeklyProfit = internalMutation({
     let accruedCount = 0;
     for (const investment of investments) {
       // Idempotency: a cron re-run (or manual trigger) within the same week must not double-credit.
-      if (investment.lastAccrualAt && now - investment.lastAccrualAt < WEEK_MS) continue;
+      // The threshold is deliberately a day short of a full week: cron start times jitter by
+      // milliseconds-to-seconds, so comparing against exactly WEEK_MS made roughly every other
+      // Monday look "too soon" and skipped it, turning weekly payouts into fortnightly ones.
+      if (investment.lastAccrualAt && now - investment.lastAccrualAt < ACCRUAL_MIN_GAP_MS) continue;
 
       const plan = await ctx.db.get(investment.planId);
       if (!plan) continue;

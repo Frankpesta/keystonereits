@@ -144,6 +144,39 @@ describe("investments.accrueWeeklyProfit", () => {
     const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
     expect(result).toEqual({ accruedCount: 0, scanned: 1 });
   });
+
+  it("still accrues when the cron fires slightly less than a full week after the last accrual (jitter)", async () => {
+    const t = convexTest(schema, convexTestModules);
+    const { user } = await createVerifiedUser(t, { profit: 0 });
+    const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
+    await seedInvestment(t, user._id, planId, { amount: 1000, lastAccrualAt: Date.now() - WEEK_MS + 5_000 });
+
+    const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
+    expect(result).toEqual({ accruedCount: 1, scanned: 1 });
+  });
+
+  it("pays every consecutive Monday even when each cron run starts a little earlier than the last", async () => {
+    vi.useFakeTimers();
+    try {
+      const firstMonday = Date.UTC(2026, 0, 5, 0, 5, 0, 500); // Mon 00:05:00.500 UTC
+      vi.setSystemTime(firstMonday);
+      const t = convexTest(schema, convexTestModules);
+      const { user } = await createVerifiedUser(t, { profit: 0 });
+      const planId = await seedPlan(t, { weeklyReturnPercent: 1 });
+      const investmentId = await seedInvestment(t, user._id, planId, { amount: 1000 });
+
+      for (let week = 0; week < 4; week++) {
+        vi.setSystemTime(firstMonday + week * WEEK_MS - week * 100); // 100ms earlier each week
+        const result = await t.mutation(internal.investments.accrueWeeklyProfit, {});
+        expect(result.accruedCount).toBe(1);
+      }
+
+      const investment = await t.run((ctx) => ctx.db.get(investmentId));
+      expect(investment?.accruedProfit).toBe(40);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("investments.processMaturities", () => {
